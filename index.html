@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Tablero de la Tasa de Deserción Anual: cálculo, perfil de los desertores y evolución histórica, con datos en vivo por programa.">
+<title>Tablero TDA · Tasa de Deserción Anual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Diseño: banda institucional azul con franja roja; el cálculo se lee sobre una línea de tiempo de tres periodos. En la TDA el rojo marca la deserción, como en el tablero institucional. */
+:root{
+  --azul-900:#0A2B5E; --azul-800:#123A75; --azul:#1F5FB0; --azul-50:#EAF1FA; --azul-claro:#9EC2F0;
+  --rojo:#D0283A; --rojo-900:#9F1D2C; --rojo-50:#FBECEE; --rojo-claro:#F6A9B2;
+  --fondo:#F3F5F9; --tarjeta:#FFFFFF; --borde:#DDE3EC; --rejilla:#E8ECF2;
+  --tinta:#15203A; --tinta-2:#45526B; --tenue:#6A758B; --linea:#8A94A6;
+  --en-oscuro:#C9D5EA; --en-oscuro-2:#DCE5F3;
+  --aviso-fondo:#FFF7E0; --aviso-borde:#F0D98A; --aviso-tinta:#5A4500;
+  --radio:12px;
+  --sombra:0 1px 2px rgba(10,43,94,.06),0 4px 14px rgba(10,43,94,.05);
+  --letra:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--fondo);color:var(--tinta);font-family:var(--letra);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--azul-900)}
+.contenedor{max-width:1400px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+@media (max-width:600px){.contenedor{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}}
+
+/* Encabezado */
+header.cabecera{background:var(--azul-900);color:#fff;border-bottom:4px solid var(--rojo)}
+.cabecera .contenedor{padding-block:34px 30px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:18px 32px}
+.titulos{display:flex;flex-direction:column;gap:10px;min-width:0;flex:1 1 560px}
+.ceja{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--en-oscuro)}
+h1{margin:0;font-size:clamp(30px,4.2vw,52px);line-height:1.12;font-weight:700;letter-spacing:-.015em;text-wrap:balance}
+.bajada-titulo{margin:0;font-size:clamp(17px,1.7vw,21px);line-height:1.45;color:var(--en-oscuro);max-width:72ch;text-wrap:pretty}
+.bajada-titulo b{color:#fff;font-weight:600}
+.controles{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.controles [hidden]{display:none!important}
+.estado{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#DCE5F3;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);padding:6px 10px;border-radius:999px;white-space:nowrap}
+.estado i{width:8px;height:8px;border-radius:50%;background:#7FD1A1;flex:none}
+.estado.respaldo i{background:#F2C14E}
+.estado.error i{background:#FF8A8A}
+.estado.cargando i{background:#9EC2F0;animation:latir 1s ease-in-out infinite}
+@keyframes latir{50%{opacity:.35}}
+.auto{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#DCE5F3}
+.auto select{background:#fff;color:var(--tinta);border:0;border-radius:8px;padding:8px 10px;font:inherit;font-size:13px;cursor:pointer;min-height:36px}
+.cuenta{font-size:12px;color:#AFC0DC;min-width:92px}
+.btn-actualizar{display:inline-flex;align-items:center;gap:8px;background:var(--rojo);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;min-height:40px}
+.btn-actualizar:hover{filter:brightness(1.08)}
+.btn-actualizar:disabled{opacity:.7;cursor:progress}
+.btn-actualizar svg{width:16px;height:16px}
+.girando svg{animation:girar 1s linear infinite}
+@keyframes girar{to{transform:rotate(360deg)}}
+.cabecera :focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+/* Barra de filtro */
+.barra{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(243,245,249,.95);backdrop-filter:saturate(1.4) blur(6px);-webkit-backdrop-filter:saturate(1.4) blur(6px);border-bottom:1px solid var(--borde)}
+.barra .contenedor{padding-block:12px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px}
+.campo{display:flex;flex-direction:column;gap:5px;min-width:0;flex:0 1 500px}
+.campo label{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tenue)}
+.campo select{appearance:none;-webkit-appearance:none;width:100%;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2345526B' stroke-width='1.8' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;border:1px solid var(--borde);border-radius:8px;padding:10px 36px 10px 12px;font:inherit;font-size:16px;font-weight:600;color:var(--tinta);cursor:pointer;min-height:44px}
+.campo select:hover{border-color:#B9C3D3}
+:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:44px;background:#fff;border:1px solid var(--borde);border-radius:8px;padding:8px 14px;font:inherit;font-size:15px;color:var(--tinta-2);cursor:pointer}
+.btn:hover{border-color:#B9C3D3;color:var(--tinta)}
+.btn[hidden]{display:none!important}
+
+main .contenedor{padding-block:24px 48px;display:flex;flex-direction:column;gap:28px}
+.aviso{padding:10px 14px;border-radius:10px;font-size:15px;background:var(--aviso-fondo);border:1px solid var(--aviso-borde);color:var(--aviso-tinta)}
+.aviso[hidden]{display:none}
+
+.seccion{scroll-margin-top:96px;display:flex;flex-direction:column;gap:18px}
+.seccion-cab{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 24px}
+.seccion-cab h2{margin:0;font-size:clamp(22px,2.2vw,30px);line-height:1.2;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.seccion-cab p{margin:4px 0 0;font-size:15.5px;color:var(--tinta-2);max-width:78ch}
+.regla{display:flex;flex-wrap:wrap;gap:10px 28px;padding:14px 18px;background:#fff;border:1px solid var(--borde);border-radius:var(--radio);font-size:15px;color:var(--tinta-2)}
+.regla div{display:flex;align-items:flex-start;gap:10px;flex:1 1 320px;min-width:0}
+.regla b{color:var(--tinta)}
+.regla .marca{flex:none;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-weight:700;font-size:14px}
+.regla .marca.roja{background:var(--rojo-50);color:var(--rojo-900)}
+.regla .marca.azul{background:var(--azul-50);color:var(--azul-800)}
+
+/* Línea de tiempo */
+.columnas-flujo{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1fr) minmax(0,1.08fr) minmax(0,1.32fr);column-gap:64px}
+.tiempo{margin-bottom:6px}
+.hito{position:relative;display:flex;flex-direction:column;gap:2px;padding-left:24px;min-width:0}
+.hito::before{content:"";position:absolute;left:0;top:5px;width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid var(--azul-900)}
+.hito::after{content:"";position:absolute;left:18px;top:11px;height:0;border-top:2px solid #C9D0DC;width:calc(100% + 64px - 18px)}
+.hito .anio{font-size:20px;line-height:24px;font-weight:700;color:var(--azul-900);background:var(--fondo);position:relative;z-index:1;padding-right:10px;align-self:flex-start}
+.hito .que{font-size:13.5px;color:var(--tenue);line-height:1.35}
+.hito.fin::after{display:none}
+.hito.fin::before{border-color:var(--rojo);background:var(--rojo)}
+.hito.fin .anio{color:var(--rojo-900)}
+
+/* Flujo */
+.flujo{position:relative;align-items:center;padding-block:8px}
+.conectores{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.col{display:flex;flex-direction:column;position:relative;z-index:1;min-width:0}
+.col-2{gap:110px}
+.col-3{gap:16px}
+.col-4{gap:32px}
+.paso{display:none}
+.nodo{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);padding:22px 24px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.rol{font-size:12.5px;line-height:1.35;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tenue)}
+.nombre{font-size:19px;line-height:1.3;font-weight:600;margin-top:4px}
+.cifra{font-size:clamp(40px,3.6vw,56px);line-height:1.08;font-weight:600;letter-spacing:-.02em;color:var(--azul-900)}
+.nota{font-size:15px;line-height:1.35;color:var(--tinta-2)}
+.nodo.grande .cifra{font-size:clamp(48px,4.4vw,66px)}
+.nodo.compacto{padding:16px 20px;gap:2px}
+.nodo.compacto .nombre{font-size:17px;margin-top:2px}
+.nodo.compacto .cifra{font-size:clamp(32px,2.7vw,42px)}
+.nodo.siguen{background:var(--azul-900);border-color:var(--azul-900);color:#fff}
+.nodo.siguen .rol{color:var(--en-oscuro)}
+.nodo.siguen .cifra{color:#fff}
+.nodo.siguen .nota{color:var(--en-oscuro-2)}
+.nodo.ausentes{border:2px dashed var(--linea);box-shadow:none}
+.nodo.ausentes .cifra{color:var(--tinta)}
+.nodo.reingreso{border:2px solid var(--azul);box-shadow:none}
+.nodo.reingreso .rol{color:var(--azul-800)}
+.nodo.graduados{background:var(--azul-50);border-color:#C7D8EE;box-shadow:none}
+.nodo.graduados .rol{color:var(--azul-800)}
+.nodo.fima{background-color:#fff;background-image:repeating-linear-gradient(135deg,rgba(21,32,58,.05) 0 8px,transparent 8px 16px);box-shadow:none}
+.nodo.fima .cifra{color:var(--tinta)}
+.nodo.desertores{background:var(--rojo);border-color:var(--rojo);color:#fff;box-shadow:0 10px 26px rgba(208,40,58,.28)}
+.nodo.desertores .rol{color:#FFE1E5}
+.nodo.desertores .cifra{color:#fff}
+
+.zoom{background:#fff;border:2px dashed var(--rojo);border-radius:var(--radio);padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+.zoom-cab{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 24px}
+.zoom-partes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px 40px}
+.zoom .rol{color:var(--rojo-900)}
+.parte{display:flex;flex-direction:column;gap:7px}
+.parte-cab{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.parte-cab span:first-child{font-size:17px;font-weight:600}
+.parte-cab span:last-child{font-size:28px;line-height:1;font-weight:600;color:var(--rojo-900)}
+.riel{height:14px;border-radius:999px;background:var(--rojo-50);overflow:hidden}
+.riel i{display:block;height:100%;border-radius:999px;background:var(--rojo);transition:width .5s cubic-bezier(.2,.7,.2,1)}
+.riel i.t1{background-color:var(--rojo);background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px)}
+.riel i.t2{background-color:var(--rojo);background-image:radial-gradient(rgba(255,255,255,.7) 1.4px,transparent 1.6px);background-size:6px 6px}
+.parte small{font-size:14px;line-height:1.35;color:var(--tinta-2)}
+.zoom-pie{font-size:14px;color:var(--tinta-2)}
+.zoom-pie b{color:var(--tinta)}
+
+.resultado{background:var(--azul-900);color:#fff;border-radius:var(--radio);border-bottom:4px solid var(--rojo);padding:26px 28px;display:flex;flex-direction:column;gap:14px}
+.resultado .rol{color:var(--en-oscuro);letter-spacing:.08em}
+.formula{font-size:18px;color:var(--en-oscuro-2)}
+.formula b{font-weight:600}
+.formula .num{color:var(--rojo-claro)}
+.cuenta-tasa{display:flex;align-items:center;flex-wrap:wrap;gap:12px 16px}
+.fraccion{display:inline-flex;flex-direction:column;align-items:center;font-size:clamp(32px,2.8vw,42px);line-height:1.1;font-weight:600}
+.fraccion span:first-child{color:var(--rojo-claro);padding:0 8px 4px}
+.fraccion span:last-child{border-top:3px solid #fff;padding:4px 8px 0}
+.igual{font-size:clamp(32px,2.8vw,42px);font-weight:500;color:var(--en-oscuro)}
+.tasa{font-size:clamp(52px,4.8vw,68px);line-height:1;font-weight:700;letter-spacing:-.02em}
+.frase{font-size:16.5px;line-height:1.45;color:var(--en-oscuro-2)}
+.frase b{color:#fff}
+.comparacion{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding-top:14px;border-top:1px solid rgba(255,255,255,.16)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-size:14px;font-weight:600;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff}
+.chip.arriba{background:var(--rojo);border-color:var(--rojo)}
+.chip.abajo{background:#fff;border-color:#fff;color:var(--azul-900)}
+.chip svg{width:14px;height:14px;flex:none}
+.puesto{font-size:14px;color:var(--en-oscuro)}
+
+.revision{background:#fff;border:1px solid var(--borde);border-radius:var(--radio);padding:14px 18px}
+.revision summary{cursor:pointer;font-weight:600;color:var(--tinta-2);min-height:32px;display:flex;align-items:center;gap:8px}
+.revision summary .n{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:var(--aviso-fondo);border:1px solid var(--aviso-borde);color:var(--aviso-tinta);font-size:13px}
+.revision summary .n.ok{background:var(--azul-50);border-color:#C7D8EE;color:var(--azul-800)}
+.revision ul{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14.5px;color:var(--tinta-2)}
+.aviso-cambio{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--azul-900);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;box-shadow:0 8px 24px rgba(10,43,94,.3);max-width:calc(100vw - 32px)}
+.aviso-cambio[hidden]{display:none}
+.fuente{font-size:13px;color:var(--tenue);margin:0}
+
+
+/* Navegación */
+.nav-secciones{display:inline-flex;margin-left:auto;background:#fff;border:1px solid var(--borde);border-radius:8px;padding:2px}
+.nav-secciones a{display:inline-flex;align-items:center;min-height:38px;padding:6px 12px;border-radius:6px;font-size:14.5px;color:var(--tinta-2);text-decoration:none}
+.nav-secciones a:hover{background:var(--rojo-50);color:var(--rojo-900)}
+@media (max-width:760px){.nav-secciones{margin-left:0}}
+.seccion+.seccion{padding-top:28px;border-top:1px solid var(--borde)}
+
+/* Tarjetas y controles */
+.tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);padding:18px 20px;min-width:0}
+.tarjeta h3{margin:0;font-size:17px;font-weight:600}
+.tarjeta .sub{margin:3px 0 0;font-size:13.5px;color:var(--tenue)}
+.cab-tarjeta{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:6px 14px;margin-bottom:14px}
+.segmento{display:inline-flex;background:#fff;border:1px solid var(--borde);border-radius:8px;padding:2px}
+.segmento button{border:0;background:transparent;min-height:40px;padding:6px 13px;border-radius:6px;font:inherit;font-size:14.5px;cursor:pointer;color:var(--tinta-2)}
+.segmento button[aria-pressed="true"]{background:var(--azul-900);color:#fff}
+.rotulo{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tenue)}
+
+/* Perfil */
+.lectura{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lectura .rotulo{margin-right:4px}
+.pastilla{display:inline-flex;align-items:baseline;gap:6px;padding:6px 12px;border-radius:999px;background:#fff;border:1px solid var(--borde);font-size:14.5px;color:var(--tinta-2)}
+.pastilla b{color:var(--tinta);font-weight:600}
+.guia-ref{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:10px;background:#fff;border:1px solid var(--borde);font-size:14.5px;color:var(--tinta-2)}
+.guia-ref[hidden]{display:none}
+.guia-ref .ref-muestra{margin-top:9px;width:22px}
+.guia-ref b{color:var(--tinta)}
+.grid-perfil{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.c4{grid-column:span 4}.c8{grid-column:span 8}
+@media (max-width:1099px){.c4{grid-column:span 6}.c8{grid-column:span 12}}
+@media (max-width:720px){.c4,.c8{grid-column:span 12}}
+.destacado{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin:-4px 0 12px}
+.destacado b{font-size:34px;line-height:1;font-weight:600;color:var(--rojo-900)}
+.destacado span{font-size:14.5px;color:var(--tinta-2)}
+.filas{display:flex;flex-direction:column;gap:10px}
+.fila{display:grid;grid-template-columns:minmax(84px,118px) minmax(0,1fr) 140px;align-items:center;gap:12px;padding:3px 0;border-radius:6px}
+.fila:hover{background:#FBF7F8}
+.fila-et{font-size:14.5px;color:var(--tinta);line-height:1.25}
+.fila-riel{position:relative;height:18px;background:var(--rejilla);border-radius:4px}
+.fila-riel i{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;background:var(--rojo);transition:width .45s cubic-bezier(.2,.7,.2,1)}
+.fila-riel i.poco{background-color:#F2B8BF;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.7) 0 3px,transparent 3px 7px)}
+.ref{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--azul-900)}
+.fila-val{font-size:14.5px;white-space:nowrap;text-align:right}
+.fila-val b{font-weight:600}
+.fila-val small{font-size:13px;color:var(--tenue);margin-left:4px}
+.fila-ref{padding:0;margin-bottom:-4px}
+.fila-ref:hover{background:none}
+.fila-ref .fila-riel{background:none}
+.ref-tag{position:absolute;bottom:2px;font-size:12px;font-weight:600;color:var(--azul-900);white-space:nowrap;padding:0 5px;border-left:2px dashed var(--azul-900);line-height:14px}
+.ref-tag.der{border-left:0;border-right:2px dashed var(--azul-900);transform:translateX(-100%)}
+.flecha-ref{font-size:11px;margin-left:3px}
+.flecha-ref.sube{color:var(--rojo)}
+.flecha-ref.baja{color:var(--azul)}
+.pie-panel{margin:12px 0 0;font-size:13px;color:var(--tenue)}
+.ref-muestra{display:inline-block;width:14px;height:0;border-top:2px dashed var(--azul-900);vertical-align:middle;margin-right:6px}
+.columnas{position:relative;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:10px;align-items:end;height:230px;padding-top:24px}
+.colum{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0;border-radius:6px}
+.colum:hover{background:#FBF7F8}
+.colum-val{font-size:13.5px;font-weight:600;color:var(--tinta);white-space:nowrap}
+.colum-barra{width:min(46px,80%);background:var(--rojo);border-radius:4px 4px 0 0;transition:height .45s cubic-bezier(.2,.7,.2,1);min-height:2px}
+.colum-barra.poco{background-color:#F2B8BF;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.7) 0 3px,transparent 3px 7px)}
+.colum-et{font-size:13px;color:var(--tenue);border-top:1px solid var(--borde);width:100%;text-align:center;padding-top:6px}
+.linea-ref{position:absolute;left:0;right:0;border-top:2px dashed var(--azul-900);pointer-events:none}
+
+/* Evolución */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{display:flex;flex-direction:column;gap:4px}
+.kpi .rotulo{margin-bottom:2px}
+.kpi .valor{font-size:34px;line-height:1.05;font-weight:600;letter-spacing:-.02em}
+.kpi .detalle{font-size:13.5px;color:var(--tenue)}
+.delta{display:inline-flex;align-items:center;gap:6px}
+.delta svg{width:22px;height:22px}
+.delta.sube{color:var(--rojo)}
+.delta.baja{color:var(--azul)}
+.leyenda{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--tinta-2)}
+.leyenda span{display:inline-flex;align-items:center;gap:8px}
+.key-linea{width:22px;height:0;border-top:3px solid var(--rojo)}
+.key-linea.punteada{border-top:2px dashed var(--tinta-2)}
+.lienzo{position:relative;width:100%;height:380px}
+.lienzo svg{display:block;width:100%;height:100%;overflow:visible}
+.lienzo .vacio{display:grid;place-items:center;height:100%;color:var(--tenue);font-size:15px;text-align:center;padding:16px}
+.datos{margin-top:10px;font-size:14px}
+.datos summary{cursor:pointer;color:var(--azul);font-weight:600;min-height:32px;display:inline-flex;align-items:center}
+.tabla-envoltura{overflow-x:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--rejilla);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--tenue);font-weight:600}
+.tip{position:fixed;z-index:50;pointer-events:none;background:var(--azul-900);color:#fff;font-size:13.5px;line-height:1.4;padding:8px 11px;border-radius:8px;box-shadow:0 6px 18px rgba(10,43,94,.25);max-width:280px}
+.tip[hidden]{display:none}
+.tip b{font-weight:600}
+@media (max-width:560px){
+  .columnas{gap:4px}.colum-val{font-size:11.5px}
+  .fila{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"et val" "riel riel";row-gap:6px}
+  .fila-et{grid-area:et}.fila-val{grid-area:val}.fila-riel{grid-area:riel}
+  .fila-ref{grid-template-areas:"riel riel"}.fila-ref>span:not(.fila-riel){display:none}
+}
+
+@media (max-width:1099px){
+  .columnas-flujo{grid-template-columns:minmax(0,1fr);row-gap:10px;column-gap:0}
+  .tiempo{display:none}
+  .conectores{display:none}
+  .col-2,.col-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .col-4{gap:14px}
+  .col-4 .resultado{order:-1}
+  .paso{display:flex;justify-content:center;align-items:center;gap:8px;color:var(--tenue);font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding-block:2px;text-align:center}
+  .paso svg{width:18px;height:18px;flex:none}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.riel i,.fila-riel i,.colum-barra{transition:none}.girando svg,.estado.cargando i{animation:none}}
+</style>
+</head>
+<body>
+
+<header class="cabecera">
+  <div class="contenedor">
+    <div class="titulos">
+      <div class="ceja">Tablero de seguimiento · cohorte <span data-p="base">2025-1</span> → <span data-p="final">2026-1</span></div>
+      <h1>Tasa de Deserción Anual <span data-p="final">2026-1</span></h1>
+      <p class="bajada-titulo" id="bajada">Cargando datos…</p>
+    </div>
+    <div class="controles">
+      <span class="estado cargando" id="estado"><i></i><span id="estado-texto">Conectando…</span></span>
+      <label class="auto" id="auto-envoltura">Actualizar
+        <select id="auto">
+          <option value="0">Manual</option>
+          <option value="30">cada 30 s</option>
+          <option value="60" selected>cada minuto</option>
+          <option value="300">cada 5 min</option>
+        </select>
+      </label>
+      <span class="cuenta" id="cuenta"></span>
+      <button type="button" class="btn-actualizar" id="btn-actualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Actualizar</button>
+    </div>
+  </div>
+</header>
+
+<div class="barra">
+  <div class="contenedor">
+    <div class="campo">
+      <label for="programa">Programa</label>
+      <select id="programa"></select>
+    </div>
+    <button type="button" class="btn" id="ver-total" hidden>Volver al total institucional</button>
+    <nav class="nav-secciones" aria-label="Secciones del tablero">
+      <a href="#calculo">Cálculo</a>
+      <a href="#perfil">Perfil</a>
+      <a href="#evolucion">Evolución</a>
+    </nav>
+  </div>
+</div>
+
+<main id="principal">
+  <div class="contenedor">
+    <div class="aviso" id="aviso-conexion" hidden></div>
+    <div class="aviso" id="aviso" hidden>Este programa tiene pocos estudiantes: un solo caso mueve mucho la tasa y los perfiles.</div>
+
+    <section class="seccion" id="calculo" aria-labelledby="t-calculo">
+      <div class="seccion-cab">
+        <div>
+          <h2 id="t-calculo">¿Cómo se calcula la TDA?</h2>
+          <p>Tomamos a los matriculados en <span data-p="base">2025-1</span> y los seguimos un año. Solo es desertor quien no aparece en <span data-p="medio">2025-2</span> y tampoco vuelve en <span data-p="final">2026-1</span>.</p>
+        </div>
+      </div>
+
+      <div class="regla">
+        <div><span class="marca roja" aria-hidden="true">2</span><span><b>Dos periodos seguidos sin matrícula.</b> Una ausencia de un semestre no basta: se confirma en el periodo siguiente.</span></div>
+        <div><span class="marca azul" aria-hidden="true">≠</span><span><b>No es lo mismo que la TAI.</b> La TAI mira un semestre; la TDA sigue a la cohorte durante un año.</span></div>
+      </div>
+
+      <div class="columnas-flujo tiempo" aria-hidden="true">
+        <div class="hito"><span class="anio" data-p="base">2025-1</span><span class="que">Se matriculan</span></div>
+        <div class="hito"><span class="anio" data-p="medio">2025-2</span><span class="que">Primer control: ¿siguen?</span></div>
+        <div class="hito"><span class="anio" data-p="final">2026-1</span><span class="que">Confirmación: ¿volvieron?</span></div>
+        <div class="hito fin"><span class="anio">Resultado</span><span class="que">Tasa de deserción anual</span></div>
+      </div>
+
+      <div class="columnas-flujo flujo" id="flujo">
+        <svg class="conectores" id="conectores" aria-hidden="true"></svg>
+
+        <div class="col col-1">
+          <div class="nodo grande" id="n-mat">
+            <span class="rol">Punto de partida</span>
+            <span class="nombre">Matriculados <span style="white-space:nowrap" data-p="base">2025-1</span></span>
+            <span class="cifra" data-k="C">–</span>
+            <span class="nota">Son el 100 % de la cohorte</span>
+          </div>
+        </div>
+
+        <div class="paso" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>en <span data-p="medio">2025-2</span> se dividen en</div>
+
+        <div class="col col-2">
+          <div class="nodo siguen" id="n-siguen">
+            <span class="rol">Siguen estudiando</span>
+            <span class="nombre">Matriculados en <span data-p="medio">2025-2</span></span>
+            <span class="cifra" data-k="D">–</span>
+            <span class="nota" id="nota-d"></span>
+          </div>
+          <div class="nodo ausentes" id="n-aus">
+            <span class="rol">Matriculados <span data-p="base">2025-1</span> − <span data-p="medio">2025-2</span></span>
+            <span class="nombre">Ausentes en <span data-p="medio">2025-2</span></span>
+            <span class="cifra" data-k="E">–</span>
+            <span class="nota" id="nota-e"></span>
+          </div>
+        </div>
+
+        <div class="paso" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>en <span data-p="final">2026-1</span> los ausentes se separan en</div>
+
+        <div class="col col-3">
+          <div class="nodo compacto reingreso" id="n-rein">
+            <span class="rol">Se descuenta · volvieron</span>
+            <span class="nombre">Reingresaron en <span data-p="final">2026-1</span></span>
+            <span class="cifra" data-k="F">–</span>
+          </div>
+          <div class="nodo compacto graduados" id="n-grad">
+            <span class="rol">Se descuenta · salida exitosa</span>
+            <span class="nombre">Se graduaron</span>
+            <span class="cifra" data-k="G">–</span>
+          </div>
+          <div class="nodo compacto fima" id="n-fima">
+            <span class="rol">Se descuenta · terminaron materias</span>
+            <span class="nombre">Finalizaron académicamente</span>
+            <span class="cifra" data-k="H">–</span>
+          </div>
+          <div class="nodo compacto desertores" id="n-des">
+            <span class="rol">Deserción confirmada</span>
+            <span class="nombre">Desertores</span>
+            <span class="cifra" data-k="I">–</span>
+          </div>
+        </div>
+
+        <div class="paso" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>con los desertores se calcula</div>
+
+        <div class="col col-4">
+          <div class="resultado" id="n-res">
+            <span class="rol">Resultado · TDA <span data-p="final">2026-1</span></span>
+            <div class="formula">Tasa = <b class="num">Desertores</b> ÷ <b>Matriculados <span data-p="base">2025-1</span></b></div>
+            <div class="cuenta-tasa">
+              <span class="fraccion"><span data-k="I">–</span><span data-k="C">–</span></span>
+              <span class="igual">=</span>
+              <span class="tasa" data-k="T">–</span>
+            </div>
+            <div class="frase" id="frase"></div>
+            <div class="comparacion" id="comparacion"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="zoom" id="n-zoom">
+        <div class="zoom-cab">
+          <span class="rol" id="zoom-titulo">¿Quiénes son los desertores?</span>
+          <span class="zoom-pie">Según el motivo que registró el coordinador. Este detalle explica el <b>porqué</b>; no cambia el cálculo.</span>
+        </div>
+        <div class="zoom-partes" id="zoom-partes"></div>
+      </div>
+    </section>
+
+    <section class="seccion" id="perfil" aria-labelledby="t-perfil">
+      <div class="seccion-cab">
+        <div>
+          <h2 id="t-perfil">¿Quiénes son los <span data-k="I">–</span> desertores?</h2>
+          <p>Perfil según los datos de matrícula <span data-p="base">2025-1</span>. Cambia entre la cantidad de desertores y la tasa de deserción dentro de cada grupo.</p>
+        </div>
+        <div class="segmento" role="group" aria-label="Medida de los perfiles">
+          <button type="button" id="m-cant" aria-pressed="true">Cantidad de desertores</button>
+          <button type="button" id="m-tasa" aria-pressed="false">Tasa dentro del grupo</button>
+        </div>
+      </div>
+      <div class="aviso" id="aviso-perfil" hidden></div>
+      <div class="lectura" id="lectura"></div>
+      <div class="guia-ref" id="guia-ref" hidden></div>
+      <div class="grid-perfil">
+        <article class="tarjeta c4">
+          <div class="cab-tarjeta"><div><h3>Sexo</h3><p class="sub" id="sub-sexo"></p></div></div>
+          <div class="destacado" id="dest-sexo"></div>
+          <div class="filas" id="p-sexo"></div>
+        </article>
+        <article class="tarjeta c8">
+          <div class="cab-tarjeta"><div><h3>Semestre que cursaban en <span data-p="base">2025-1</span></h3><p class="sub" id="sub-semestre"></p></div></div>
+          <div class="columnas" id="p-semestre" role="img"></div>
+          <p class="pie-panel" id="pie-semestre"></p>
+        </article>
+        <article class="tarjeta c4">
+          <div class="cab-tarjeta"><div><h3>Rango de edad</h3><p class="sub" id="sub-edad"></p></div></div>
+          <div class="filas" id="p-edad"></div>
+        </article>
+        <article class="tarjeta c4">
+          <div class="cab-tarjeta"><div><h3>Estado civil</h3><p class="sub" id="sub-civil"></p></div></div>
+          <div class="filas" id="p-civil"></div>
+        </article>
+        <article class="tarjeta c4">
+          <div class="cab-tarjeta"><div><h3>Estrato socioeconómico</h3><p class="sub" id="sub-estrato"></p></div></div>
+          <div class="filas" id="p-estrato"></div>
+        </article>
+      </div>
+      <p class="pie-panel" id="pie-perfil"></p>
+    </section>
+
+    <section class="seccion" id="evolucion" aria-labelledby="t-evol">
+      <div class="seccion-cab">
+        <div>
+          <h2 id="t-evol">Evolución de la TDA</h2>
+          <p id="evol-bajada"></p>
+        </div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <article class="tarjeta">
+        <div class="cab-tarjeta">
+          <div><h3>Tasa de deserción anual por periodo</h3><p class="sub">Pasa el cursor sobre la gráfica para ver cada periodo.</p></div>
+          <div class="leyenda" id="leyenda"></div>
+        </div>
+        <div class="lienzo" id="lienzo"></div>
+        <details class="datos">
+          <summary>Ver los datos en tabla</summary>
+          <div class="tabla-envoltura"><table id="tabla"></table></div>
+        </details>
+      </article>
+    </section>
+
+    <details class="revision" id="revision">
+      <summary>Revisión de datos <span class="n" id="revision-n">0</span></summary>
+      <ul id="revision-lista"></ul>
+    </details>
+
+    <p class="fuente" id="fuente"></p>
+  </div>
+</main>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<div class="aviso-cambio" id="aviso-cambio" role="status" hidden></div>
+
+<script>
+/* =========================================================
+   Configuración
+   ========================================================= */
+var API_URL = 'https://script.google.com/macros/s/AKfycbw1jfcRkl478fGzsWPyli_8Zm68lmeyCWRzdvqPWE7eNM-NEKI3VmGEhsDrzMtK3URx/exec';   // URL de la implementación de Apps Script de la TDA (termina en /exec)
+var API_TOKEN = '';
+var ESPERA_MS = 60000;
+
+/* Copia de respaldo con datos agregados (se usa si no hay conexión) */
+var RESPALDO = {"ok":true,"version":1,"tipo":"TDA","periodos":{"base":"2025-1","medio":"2025-2","final":"2026-1"},"dims":{"sexo":["Hombre","Mujer","No consta"],"semestre":["1","2","3","4","5","6","7","8","9","10","Sin dato"],"edad":["Menos de 20","20 a 24","25 a 29","30 a 34","35 o más","Sin dato"],"civil":["Soltero(a)","Casado(a)","No reportado","Otros"],"estrato":["1","2","3","4","5 y 6","Sin dato"]},"motivos":["Causa no determinada","Otra condición","Matriculado en otro programa","Sin observación"],"programas":[{"nombre":"ADMINISTRACIÓN DE EMPRESAS","clave":"ADMINISTRACION EMPRESAS","grado":"Profesional","facultad":"Ciencias económicas, administrativas y contables","C":601,"D":458,"F":11,"G":103,"H":6,"motivos":[22,0,1,0],"serie":[0.131,0.1787,0.122,0.1562,0.1216,0.2944,0.0683,0.2972,0.0853,0.1126,0.092,0.0826,0.078,0.062,0.045,0.035,0.037,0.058,0.037,0.03367,0.03827],"perfil":{"sexo":[[266,12],[335,11],[0,0]],"semestre":[[14,1],[2,1],[2,0],[0,0],[10,0],[159,8],[95,4],[160,3],[100,3],[58,3],[1,0]],"edad":[[10,0],[368,6],[124,7],[58,7],[41,3],[0,0]],"civil":[[246,13],[9,1],[332,8],[14,1]],"estrato":[[214,6],[256,7],[101,7],[14,0],[4,1],[12,2]]},"datos":{"m":601,"a":23}},{"nombre":"ADMINISTRACIÓN EN SEGURIDAD Y SALUD EN EL TRABAJO","clave":"ADMINISTRACION SEGURIDAD SALUD TRABAJO","grado":"Profesional","facultad":"Ciencias económicas, administrativas y contables","C":74,"D":52,"F":1,"G":18,"H":0,"motivos":[3,0,0,0],"serie":[null,null,null,null,null,null,null,null,null,null,null,null,0.222,0.087,0.031,0.026,0.053,0.016,0.08,0.02632,0.04054],"perfil":{"sexo":[[19,1],[55,2],[0,0]],"semestre":[[3,1],[0,0],[6,0],[0,0],[4,0],[17,0],[22,0],[21,2],[1,0],[0,0],[0,0]],"edad":[[2,0],[41,1],[16,1],[10,1],[5,0],[0,0]],"civil":[[16,2],[3,0],[54,1],[1,0]],"estrato":[[31,0],[26,1],[10,2],[0,0],[0,0],[7,0]]},"datos":{"m":74,"a":3}},{"nombre":"CONTADURÍA PÚBLICA","clave":"CONTADURIA PUBLICA","grado":"Profesional","facultad":"Ciencias económicas, administrativas y contables","C":250,"D":187,"F":10,"G":38,"H":2,"motivos":[10,3,0,0],"serie":[0.2321,0.2107,0.2063,0.2793,0.1317,0.0727,0.1397,0.1752,0.1299,0.1389,0.1206,0.0798,0.088,0.085,0.044,0.06,0.038,0.051,0.058,0.04701,0.052],"perfil":{"sexo":[[141,12],[109,1],[0,0]],"semestre":[[59,3],[3,0],[5,0],[7,0],[14,1],[49,4],[29,0],[46,3],[36,2],[1,0],[1,0]],"edad":[[18,2],[147,4],[57,3],[15,0],[13,4],[0,0]],"civil":[[116,8],[4,0],[127,4],[3,1]],"estrato":[[88,6],[116,2],[32,3],[4,1],[0,0],[10,1]]},"datos":{"m":250,"a":13}},{"nombre":"DERECHO","clave":"DERECHO","grado":"Profesional","facultad":"Ciencias sociales y humanas","C":398,"D":334,"F":18,"G":5,"H":24,"motivos":[16,1,0,0],"serie":[0.1499,0.1245,0.155,0.1842,0.1379,0.0622,0.1345,0.1022,0.0778,0.0769,0.0796,0.0624,0.046,0.176,0.106,0.029,0.07,0.051,0.061,0.0468,0.04271],"perfil":{"sexo":[[173,10],[225,7],[0,0]],"semestre":[[59,6],[37,2],[51,2],[42,3],[41,2],[35,0],[48,0],[27,1],[30,0],[28,1],[0,0]],"edad":[[126,6],[154,6],[39,3],[24,0],[55,2],[0,0]],"civil":[[61,4],[3,0],[331,13],[3,0]],"estrato":[[135,6],[153,8],[74,0],[9,3],[0,0],[27,0]]},"datos":{"m":398,"a":17}},{"nombre":"INGENIERÍA AMBIENTAL","clave":"INGENIERIA AMBIENTAL","grado":"Profesional","facultad":"Ingeniería","C":93,"D":66,"F":4,"G":14,"H":4,"motivos":[0,5,0,0],"serie":[0.1765,0.1176,0.0517,0.1529,0.0235,0.0506,0.1,0.0588,0.2821,0.1,0.0833,0.084,0.085,0.058,0.014,0.063,0.074,0.065,0.056,0.06186,0.05376],"perfil":{"sexo":[[41,1],[52,4],[0,0]],"semestre":[[2,0],[0,0],[0,0],[0,0],[1,0],[7,1],[35,1],[17,0],[16,0],[15,3],[0,0]],"edad":[[2,0],[67,3],[18,2],[4,0],[2,0],[0,0]],"civil":[[40,4],[0,0],[53,1],[0,0]],"estrato":[[38,2],[40,2],[9,0],[2,1],[0,0],[4,0]]},"datos":{"m":93,"a":5}},{"nombre":"INGENIERÍA CIVIL","clave":"INGENIERIA CIVIL","grado":"Profesional","facultad":"Ingeniería","C":390,"D":347,"F":12,"G":11,"H":1,"motivos":[0,19,0,0],"serie":[null,null,null,null,null,null,null,null,null,null,0.4348,0.0909,0.163,0.08,0.079,0.086,0.085,0.083,0.084,0.06313,0.04872],"perfil":{"sexo":[[319,18],[71,1],[0,0]],"semestre":[[34,6],[59,8],[73,1],[69,0],[61,4],[45,0],[20,0],[14,0],[10,0],[5,0],[0,0]],"edad":[[130,6],[164,6],[42,3],[22,1],[32,3],[0,0]],"civil":[[21,1],[1,0],[365,17],[3,1]],"estrato":[[180,8],[149,5],[41,5],[2,1],[1,0],[17,0]]},"datos":{"m":390,"a":19}},{"nombre":"INGENIERÍA DE PROCESOS","clave":"INGENIERIA PROCESOS","grado":"Profesional","facultad":"Ingeniería","C":80,"D":52,"F":4,"G":6,"H":12,"motivos":[6,0,0,0],"serie":[0.2038,0.2436,0.2292,0.1862,0.1813,0.114,0.1655,0.0942,0.5231,0.2133,0.2329,0.2584,0.191,0.229,0.207,0.099,0.101,0.13,0.073,0.04494,0.075],"perfil":{"sexo":[[62,4],[18,2],[0,0]],"semestre":[[4,0],[0,0],[0,0],[0,0],[1,0],[10,2],[16,2],[14,1],[24,1],[11,0],[0,0]],"edad":[[0,0],[35,3],[22,2],[17,1],[6,0],[0,0]],"civil":[[37,2],[2,1],[39,3],[2,0]],"estrato":[[35,2],[33,3],[9,1],[1,0],[0,0],[2,0]]},"datos":{"m":80,"a":6}},{"nombre":"INGENIERÍA DE SISTEMAS","clave":"INGENIERIA SISTEMAS","grado":"Profesional","facultad":"Ingeniería","C":280,"D":241,"F":5,"G":21,"H":2,"motivos":[8,3,0,0],"serie":[0.1824,0.3168,0.1232,0.2143,0.0948,0.0465,0.0777,0.1949,0.1875,0.0521,0.0426,0.2114,0.13,0.15,0.094,0.131,0.041,0.042,0.079,0.04854,0.03929],"perfil":{"sexo":[[247,11],[33,0],[0,0]],"semestre":[[15,2],[0,0],[1,0],[0,0],[3,0],[12,0],[120,3],[57,3],[57,2],[15,1],[0,0]],"edad":[[8,0],[211,7],[35,3],[17,0],[9,1],[0,0]],"civil":[[72,4],[0,0],[203,7],[5,0]],"estrato":[[105,5],[112,4],[42,1],[5,0],[1,0],[15,1]]},"datos":{"m":280,"a":11}},{"nombre":"INGENIERÍA ELECTRÓNICA","clave":"INGENIERIA ELECTRONICA","grado":"Profesional","facultad":"Ingeniería","C":110,"D":77,"F":1,"G":28,"H":0,"motivos":[2,2,0,0],"serie":[0,0,0.03846,0.0143,0.0732,0.0385,0.1333,0.0603,0.1774,0.1765,0.1327,0.0488,0.049,0.087,0.076,0.037,0.036,0.043,0.018,0.02857,0.03636],"perfil":{"sexo":[[105,4],[5,0],[0,0]],"semestre":[[7,0],[0,0],[0,0],[0,0],[2,0],[6,1],[18,1],[25,0],[29,1],[23,1],[0,0]],"edad":[[1,0],[58,0],[25,1],[22,3],[4,0],[0,0]],"civil":[[45,3],[4,0],[60,1],[1,0]],"estrato":[[40,0],[55,3],[11,0],[1,0],[0,0],[3,1]]},"datos":{"m":110,"a":4}},{"nombre":"INGENIERÍA INDUSTRIAL","clave":"INGENIERIA INDUSTRIAL","grado":"Profesional","facultad":"Ingeniería","C":589,"D":422,"F":22,"G":100,"H":22,"motivos":[23,0,0,0],"serie":[0.1491,0.1801,0.142,0.1689,0.1068,0.0848,0.1237,0.1112,0.3166,0.1352,0.1095,0.2015,0.085,0.077,0.069,0.078,0.069,0.076,0.055,0.05769,0.03905],"perfil":{"sexo":[[323,17],[266,6],[0,0]],"semestre":[[26,1],[2,0],[10,0],[2,0],[2,0],[34,4],[169,5],[113,4],[127,7],[104,2],[0,0]],"edad":[[28,1],[308,6],[146,9],[67,5],[40,2],[0,0]],"civil":[[220,12],[10,0],[349,11],[10,0]],"estrato":[[228,13],[246,5],[82,5],[6,0],[0,0],[27,0]]},"datos":{"m":589,"a":23}},{"nombre":"LICENCIATURA EN EDUCACION INFANTIL","clave":"LICENCIATURA EDUCACION INFANTIL","grado":"Profesional","facultad":"Ciencias sociales y humanas","C":46,"D":38,"F":0,"G":0,"H":0,"motivos":[4,4,0,0],"serie":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.17391],"perfil":{"sexo":[[1,0],[45,8],[0,0]],"semestre":[[46,8],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[38,5],[7,3],[1,0],[0,0],[0,0],[0,0]],"civil":[[2,0],[0,0],[44,8],[0,0]],"estrato":[[23,3],[18,4],[5,1],[0,0],[0,0],[0,0]]},"datos":{"m":46,"a":8}},{"nombre":"NEGOCIOS INTERNACIONALES PROFESIONAL","clave":"NEGOCIOS INTERNACIONALES PROFESIONAL","grado":"Profesional","facultad":"Ciencias económicas, administrativas y contables","C":67,"D":67,"F":0,"G":0,"H":0,"motivos":[0,0,0,0],"serie":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0,0],"perfil":{"sexo":[[33,0],[34,0],[0,0]],"semestre":[[17,0],[2,0],[1,0],[0,0],[3,0],[23,0],[21,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[12,0],[49,0],[5,0],[0,0],[1,0],[0,0]],"civil":[[16,0],[0,0],[51,0],[0,0]],"estrato":[[31,0],[27,0],[7,0],[1,0],[0,0],[1,0]]},"datos":{"m":67,"a":0}},{"nombre":"PSICOLOGÍA","clave":"PSICOLOGIA","grado":"Profesional","facultad":"Ciencias sociales y humanas","C":376,"D":308,"F":6,"G":50,"H":1,"motivos":[7,4,0,0],"serie":[0.1214,0.1211,0.0874,0.0894,0.0949,0.0567,0.092,0.0732,0.1149,0.1543,0.0824,0.0344,0.037,0.038,0.028,0.037,0.025,0.034,0.013,0.02975,0.02926],"perfil":{"sexo":[[65,1],[311,10],[0,0]],"semestre":[[35,2],[30,0],[30,0],[31,1],[41,0],[38,2],[30,1],[43,2],[46,2],[52,1],[0,0]],"edad":[[115,0],[189,6],[53,4],[12,0],[7,1],[0,0]],"civil":[[94,6],[3,1],[276,4],[3,0]],"estrato":[[135,7],[142,0],[48,3],[2,0],[2,0],[47,1]]},"datos":{"m":376,"a":11}},{"nombre":"TECNOLOGÍA EN CONSTRUCCIONES CIVILES","clave":"TECNOLOGIA CONSTRUCCIONES CIVILES","grado":"Tecnológico","facultad":"Ingeniería","C":63,"D":54,"F":0,"G":0,"H":0,"motivos":[0,9,0,0],"serie":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.03896,0.14286],"perfil":{"sexo":[[47,6],[16,3],[0,0]],"semestre":[[63,9],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[41,4],[13,2],[5,2],[4,1],[0,0],[0,0]],"civil":[[4,1],[0,0],[59,8],[0,0]],"estrato":[[31,3],[25,6],[6,0],[1,0],[0,0],[0,0]]},"datos":{"m":63,"a":9}},{"nombre":"TECNOLOGÍA EN CONTROL DE CALIDAD","clave":"TECNOLOGIA CONTROL CALIDAD","grado":"Tecnológico","facultad":"Ingeniería","C":175,"D":153,"F":5,"G":7,"H":0,"motivos":[5,5,0,0],"serie":[0.1838,0.1272,0.1596,0.1744,0.1445,0.1289,0.1388,0.1348,0.2293,0.2319,0.1742,0.0822,0.076,0.073,0.105,0.085,0.042,0.111,0.093,0.09202,0.05714],"perfil":{"sexo":[[106,10],[69,0],[0,0]],"semestre":[[51,6],[22,0],[31,1],[18,1],[33,2],[20,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[83,2],[60,2],[14,1],[11,4],[7,1],[0,0]],"civil":[[24,2],[0,0],[150,8],[1,0]],"estrato":[[79,7],[77,2],[13,1],[1,0],[0,0],[5,0]]},"datos":{"m":175,"a":10}},{"nombre":"TECNOLOGÍA EN CONTROL ELECTRÓNICO DE PROCESOS","clave":"TECNOLOGIA CONTROL ELECTRONICO PROCESOS","grado":"Tecnológico","facultad":"Ingeniería","C":141,"D":121,"F":3,"G":1,"H":1,"motivos":[11,3,1,0],"serie":[0.1659,0.1789,0.1351,0.2346,0.168,0.0963,0.1561,0.0966,0.25,0.2903,0.1569,0.0803,0.089,0.092,0.073,0.068,0.094,0.131,0.112,0.07801,0.10638],"perfil":{"sexo":[[129,13],[12,2],[0,0]],"semestre":[[32,6],[20,2],[23,4],[29,1],[28,1],[9,1],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[59,3],[55,6],[15,2],[10,3],[2,1],[0,0]],"civil":[[16,4],[1,1],[124,10],[0,0]],"estrato":[[55,9],[67,5],[13,1],[1,0],[0,0],[5,0]]},"datos":{"m":141,"a":15}},{"nombre":"TECNOLOGÍA EN DESARROLLO DE SOFTWARE","clave":"TECNOLOGIA DESARROLLO SOFTWARE","grado":"Tecnológico","facultad":"Ingeniería","C":1215,"D":1052,"F":26,"G":19,"H":10,"motivos":[108,0,0,0],"serie":[0.2319,0.1953,0.2264,0.2392,0.1255,0.1689,0.2169,0.0841,0.2027,0.2754,0.1576,0.0517,0.104,0.087,0.081,0.083,0.091,0.078,0.076,0.0731,0.08889],"perfil":{"sexo":[[1098,102],[116,6],[1,0]],"semestre":[[366,60],[188,24],[230,13],[189,7],[164,3],[77,1],[0,0],[0,0],[0,0],[0,0],[1,0]],"edad":[[723,64],[413,36],[49,6],[15,1],[14,1],[1,0]],"civil":[[88,7],[0,0],[1125,101],[2,0]],"estrato":[[508,47],[492,40],[154,18],[23,3],[4,0],[34,0]]},"datos":{"m":1215,"a":108}},{"nombre":"TECNOLOGÍA EN GESTIÓN AMBIENTAL INDUSTRIAL","clave":"TECNOLOGIA GESTION AMBIENTAL INDUSTRIAL","grado":"Tecnológico","facultad":"Ingeniería","C":174,"D":160,"F":4,"G":2,"H":1,"motivos":[0,7,0,0],"serie":[0.2012,0.1968,0.1242,0.1711,0.1702,0.0897,0.2,0.0467,0.1798,0.199,0.0847,0.0664,0.104,0.056,0.051,0.082,0.08,0.106,0.06,0.06977,0.04023],"perfil":{"sexo":[[83,4],[91,3],[0,0]],"semestre":[[45,1],[26,3],[32,0],[19,1],[29,1],[23,1],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[89,1],[74,5],[8,1],[3,0],[0,0],[0,0]],"civil":[[9,0],[0,0],[164,7],[1,0]],"estrato":[[86,5],[61,0],[17,1],[0,0],[0,0],[10,1]]},"datos":{"m":174,"a":7}},{"nombre":"TECNOLOGÍA EN GESTIÓN CONTABLE","clave":"TECNOLOGIA GESTION CONTABLE","grado":"Tecnológico","facultad":"Ciencias económicas, administrativas y contables","C":485,"D":419,"F":15,"G":8,"H":3,"motivos":[40,0,0,0],"serie":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.07775,0.08247],"perfil":{"sexo":[[273,27],[212,13],[0,0]],"semestre":[[131,20],[73,5],[98,7],[69,3],[73,5],[41,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[177,16],[199,11],[50,10],[29,3],[30,0],[0,0]],"civil":[[56,10],[3,0],[425,30],[1,0]],"estrato":[[222,13],[194,22],[55,4],[4,1],[1,0],[9,0]]},"datos":{"m":485,"a":40}},{"nombre":"TECNOLOGÍA EN GESTIÓN DE MARKETING","clave":"TECNOLOGIA GESTION MARKETING","grado":"Tecnológico","facultad":"Ciencias económicas, administrativas y contables","C":279,"D":241,"F":2,"G":7,"H":1,"motivos":[27,0,1,0],"serie":[null,null,null,null,null,null,null,null,null,null,null,null,0.04,0.128,0.103,0.092,0.135,0.095,0.098,0.0625,0.10036],"perfil":{"sexo":[[132,15],[147,13],[0,0]],"semestre":[[97,17],[34,1],[60,4],[33,4],[45,2],[10,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[125,9],[114,15],[18,3],[14,0],[8,1],[0,0]],"civil":[[24,6],[0,0],[255,22],[0,0]],"estrato":[[80,11],[131,13],[50,3],[8,0],[2,0],[8,1]]},"datos":{"m":279,"a":28}},{"nombre":"TECNOLOGÍA EN GESTIÓN DE NEGOCIOS INTERNACIONALES","clave":"TECNOLOGIA GESTION NEGOCIOS INTERNACIONALES","grado":"Tecnológico","facultad":"Ciencias económicas, administrativas y contables","C":672,"D":585,"F":19,"G":25,"H":2,"motivos":[41,0,0,0],"serie":[0.1835,0.1746,0.2245,0.2038,0.1494,0.1083,0.1972,0.1579,0.1707,0.2557,0.1705,0.0721,0.095,0.1,0.077,0.073,0.081,0.091,0.049,0.06522,0.06101],"perfil":{"sexo":[[304,23],[368,18],[0,0]],"semestre":[[203,24],[85,5],[111,5],[94,3],[115,1],[62,2],[0,0],[0,0],[0,0],[0,0],[2,1]],"edad":[[360,22],[251,12],[37,5],[11,1],[13,1],[0,0]],"civil":[[40,9],[1,0],[630,31],[1,1]],"estrato":[[248,14],[307,21],[67,4],[7,1],[2,0],[41,1]]},"datos":{"m":672,"a":41}},{"nombre":"TECNOLOGÍA EN GESTIÓN DE REDES DE COMPUTADORES Y SEGURIDAD INFORMÁTICA","clave":"TECNOLOGIA GESTION REDES COMPUTADORES SEGURIDAD INFORMATICA","grado":"Tecnológico","facultad":"Ingeniería","C":101,"D":92,"F":1,"G":0,"H":0,"motivos":[8,0,0,0],"serie":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.12,0.116,0.083,0.12088,0.07921],"perfil":{"sexo":[[91,6],[10,2],[0,0]],"semestre":[[33,7],[20,1],[30,0],[12,0],[5,0],[1,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[64,6],[33,2],[4,0],[0,0],[0,0],[0,0]],"civil":[[6,1],[0,0],[95,7],[0,0]],"estrato":[[42,4],[41,4],[13,0],[2,0],[0,0],[3,0]]},"datos":{"m":101,"a":8}},{"nombre":"TECNOLOGÍA EN GESTIÓN FINANCIERA","clave":"TECNOLOGIA GESTION FINANCIERA","grado":"Tecnológico","facultad":"Ciencias económicas, administrativas y contables","C":236,"D":181,"F":12,"G":24,"H":1,"motivos":[18,0,0,0],"serie":[0.2008,0.2085,0.2611,0.1872,0.141,0.1192,0.2089,0.1733,0.1204,0.1545,0.1181,0.0714,0.101,0.077,0.099,0.057,0.07,0.102,0.056,0.11392,0.07627],"perfil":{"sexo":[[107,12],[129,6],[0,0]],"semestre":[[70,12],[18,0],[22,1],[41,3],[40,2],[45,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[64,7],[102,7],[34,1],[20,1],[16,2],[0,0]],"civil":[[25,1],[1,0],[209,17],[1,0]],"estrato":[[109,8],[87,7],[30,1],[4,1],[0,0],[6,1]]},"datos":{"m":236,"a":18}},{"nombre":"TECNOLOGÍA EN GESTIÓN LOGÍSTICA Y PORTUARIA","clave":"TECNOLOGIA GESTION LOGISTICA PORTUARIA","grado":"Tecnológico","facultad":"Ciencias económicas, administrativas y contables","C":847,"D":686,"F":27,"G":40,"H":8,"motivos":[83,3,0,0],"serie":[0.2328,0.146,0.1976,0.1994,0.1881,0.1102,0.1922,0.1736,0.2161,0.1828,0.1389,0.0797,0.116,0.096,0.086,0.085,0.077,0.076,0.087,0.09202,0.10153],"perfil":{"sexo":[[525,66],[322,20],[0,0]],"semestre":[[273,56],[104,9],[139,4],[100,7],[155,8],[76,2],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[383,34],[360,36],[58,8],[29,4],[17,4],[0,0]],"civil":[[71,10],[1,1],[773,75],[2,0]],"estrato":[[349,38],[359,36],[70,8],[7,2],[1,0],[61,2]]},"datos":{"m":847,"a":86}},{"nombre":"TECNOLOGÍA EN GESTIÓN TURÍSTICA Y HOTELERA","clave":"TECNOLOGIA GESTION TURISTICA HOTELERA","grado":"Tecnológico","facultad":"Ciencias económicas, administrativas y contables","C":356,"D":307,"F":10,"G":13,"H":2,"motivos":[24,0,0,0],"serie":[0.1714,0.177,0.2034,0.1885,0.1894,0.0952,0.2672,0.1733,0.0905,0.156,0.1168,0.1145,0.072,0.065,0.083,0.062,0.063,0.099,0.084,0.07034,0.06742],"perfil":{"sexo":[[107,13],[249,11],[0,0]],"semestre":[[99,12],[49,5],[76,2],[51,3],[61,0],[19,1],[0,0],[0,0],[0,0],[0,0],[1,1]],"edad":[[200,13],[131,7],[19,3],[2,0],[4,1],[0,0]],"civil":[[18,2],[0,0],[338,22],[0,0]],"estrato":[[162,14],[146,7],[23,2],[7,1],[0,0],[18,0]]},"datos":{"m":356,"a":24}},{"nombre":"TECNOLOGÍA EN INSTRUMENTACIÓN INDUSTRIAL","clave":"TECNOLOGIA INSTRUMENTACION INDUSTRIAL","grado":"Tecnológico","facultad":"Ingeniería","C":8,"D":4,"F":0,"G":4,"H":0,"motivos":[0,0,0,0],"serie":[0.2629,0.267,0.2302,0.207,0.2165,0.0592,0.1726,0.1159,0.0568,0.5135,0.32,0.0686,0.109,0.16,0.184,0.045,0.13,0.07,0.065,0.03704,0],"perfil":{"sexo":[[8,0],[0,0],[0,0]],"semestre":[[0,0],[0,0],[0,0],[0,0],[2,0],[6,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[0,0],[6,0],[2,0],[0,0],[0,0],[0,0]],"civil":[[3,0],[0,0],[5,0],[0,0]],"estrato":[[3,0],[4,0],[0,0],[0,0],[0,0],[1,0]]},"datos":{"m":8,"a":0}},{"nombre":"TECNOLOGÍA EN OPERACIÓN DE PLANTAS Y PROCESOS INDUSTRIALES","clave":"TECNOLOGIA OPERACION PLANTAS PROCESOS INDUSTRIALES","grado":"Tecnológico","facultad":"Ingeniería","C":250,"D":188,"F":12,"G":13,"H":2,"motivos":[33,2,0,0],"serie":[0.3026,0.2394,0.234,0.1921,0.2007,0.2021,0.1908,0.0745,0.2741,0.3145,0.2397,0.0757,0.135,0.134,0.099,0.082,0.104,0.137,0.077,0.13393,0.14],"perfil":{"sexo":[[212,29],[38,6],[0,0]],"semestre":[[77,18],[23,3],[32,3],[49,3],[40,3],[29,5],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[77,12],[112,15],[33,5],[18,3],[10,0],[0,0]],"civil":[[35,8],[1,0],[211,27],[3,0]],"estrato":[[120,17],[99,15],[27,3],[1,0],[0,0],[3,0]]},"datos":{"m":250,"a":35}},{"nombre":"TECNOLOGIA EN PRODUCCIÓN INDUSTRIAL","clave":"TECNOLOGIA PRODUCCION INDUSTRIAL","grado":"Tecnológico","facultad":"Ingeniería","C":485,"D":421,"F":14,"G":15,"H":4,"motivos":[31,0,0,0],"serie":[0.1918,0.1611,0.1971,0.2088,0.1228,0.0947,0.1545,0.1087,0.1973,0.2311,0.1533,0.0659,0.118,0.063,0.07,0.086,0.072,0.091,0.078,0.08429,0.06392],"perfil":{"sexo":[[379,25],[106,6],[0,0]],"semestre":[[106,14],[67,3],[104,8],[71,4],[83,1],[53,0],[0,0],[0,0],[0,0],[0,0],[1,1]],"edad":[[210,14],[192,11],[42,3],[24,3],[17,0],[0,0]],"civil":[[42,3],[2,0],[438,28],[3,0]],"estrato":[[230,15],[189,12],[48,2],[5,2],[0,0],[13,0]]},"datos":{"m":485,"a":31}},{"nombre":"TECNOLOGÍA EN PROMOCIÓN SOCIAL","clave":"TECNOLOGIA PROMOCION SOCIAL","grado":"Tecnológico","facultad":"Ciencias sociales y humanas","C":31,"D":30,"F":0,"G":0,"H":0,"motivos":[1,0,0,0],"serie":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.03226],"perfil":{"sexo":[[1,0],[30,1],[0,0]],"semestre":[[31,1],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[25,1],[5,0],[1,0],[0,0],[0,0],[0,0]],"civil":[[0,0],[0,0],[31,1],[0,0]],"estrato":[[20,0],[9,1],[2,0],[0,0],[0,0],[0,0]]},"datos":{"m":31,"a":1}},{"nombre":"TECNOLOGÍA EN SEGURIDAD E HIGIENE OCUPACIONAL","clave":"TECNOLOGIA SEGURIDAD HIGIENE OCUPACIONAL","grado":"Tecnológico","facultad":"Ingeniería","C":434,"D":361,"F":18,"G":19,"H":2,"motivos":[20,14,0,0],"serie":[0.2269,0.225,0.1432,0.2053,0.1513,0.1096,0.2015,0.1561,0.1897,0.2907,0.24,0.0767,0.111,0.125,0.081,0.088,0.082,0.123,0.055,0.07565,0.07834],"perfil":{"sexo":[[140,16],[294,18],[0,0]],"semestre":[[102,16],[34,2],[84,3],[86,2],[80,5],[48,6],[0,0],[0,0],[0,0],[0,0],[0,0]],"edad":[[174,7],[190,20],[42,6],[17,1],[11,0],[0,0]],"civil":[[36,5],[1,0],[395,29],[2,0]],"estrato":[[196,19],[184,11],[34,4],[2,0],[0,0],[18,0]]},"datos":{"m":434,"a":34}},{"nombre":"TRABAJO SOCIAL","clave":"TRABAJO SOCIAL","grado":"Profesional","facultad":"Ciencias sociales y humanas","C":425,"D":374,"F":4,"G":36,"H":0,"motivos":[11,0,0,0],"serie":[null,null,null,null,null,null,null,null,0.0458,0.2059,0.1569,0.0364,0.073,0.028,0.047,0.051,0.036,0.04,0.026,0.0285,0.02588],"perfil":{"sexo":[[45,3],[380,8],[0,0]],"semestre":[[35,2],[38,1],[80,2],[34,1],[86,1],[43,1],[44,1],[28,1],[37,1],[0,0],[0,0]],"edad":[[141,4],[249,5],[25,2],[4,0],[6,0],[0,0]],"civil":[[27,2],[0,0],[396,9],[2,0]],"estrato":[[194,3],[161,4],[26,1],[1,0],[0,0],[43,3]]},"datos":{"m":425,"a":11}}],"total":{"C":9731,"D":8078,"F":266,"G":627,"H":111,"perfil":{"sexo":[[5582,461],[4148,188],[1,0]],"semestre":[[2135,311],[936,75],[1331,60],[1046,47],[1222,42],[997,42],[667,18],[565,20],[513,19],[312,12],[7,3]],"edad":[[3485,239],[4357,243],[1039,96],[479,43],[370,28],[1,0]],"civil":[[1510,130],[50,5],[8107,510],[64,4]],"estrato":[[4017,285],[4006,250],[1119,81],[121,17],[18,1],[450,15]]},"motivos":[562,84,3,0]},"serie":{"periodos":["2016-1","2016-2","2017-1","2017-2","2018-1","2018-2","2019-1","2019-2","2020-1","2020-2","2021-1","2021-2","2022-1","2022-2","2023-1","2023-2","2024-1","2024-2","2025-1","2025-2","2026-1"],"institucional":[0.1937,0.1798,0.1673,0.1834,0.1389,0.1052,0.1486,0.1249,0.1653,0.1881,0.1326,0.0882,0.092,0.088,0.073,0.061,0.072,0.08,0.065,0.06566,0.06669]},"avisos":[],"fuente":{"nombre":"Tasas_de_Deserción_Anual_2026-1.xlsx","modificado":null,"hojas":{"tda":"TDA 2026-1","consolidado":"Consolidados","datos":"Datos 2025-1 (9731)"}},"generado":"2026-10-21T03:40:00Z"};
+
+(function(){
+  function miles(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+  function pct(x,d){ return (x == null || isNaN(x)) ? '–' : (x*100).toFixed(d).replace('.',',') + ' %'; }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  var MENORES = {de:1,del:1,en:1,y:1,e:1,la:1,el:1,los:1,las:1,a:1,para:1};
+  var ACENTOS = {tecnologia:'tecnología',gestion:'gestión',informatica:'informática',educacion:'educación',produccion:'producción',administracion:'administración',ingenieria:'ingeniería',psicologia:'psicología',contaduria:'contaduría',publica:'pública',logistica:'logística',turistica:'turística',electronica:'electrónica',operacion:'operación',promocion:'promoción',instrumentacion:'instrumentación'};
+  function titulo(s){
+    return String(s||'').toLowerCase().replace(/\s+/g,' ').trim().replace(/\.$/,'').split(' ')
+      .map(function(w,i){ w = ACENTOS[w] || w; return (i>0 && MENORES[w]) ? w : w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+  }
+  var almacen = {
+    leer: function(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+    guardar: function(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+  };
+
+  /* ---------- Modelo ---------- */
+  /* Cada fila: [nombre, C, D, F, G, H]  ->  E = C − D,  I = E − F − G − H,  TDA = I / C */
+  var FILAS = [], CLAVES = [], FAC = [], MOTIVOS = [], MOT = [], PER = {base:'',medio:'',final:''}, AVISOS = [], FUENTE = null, NPROG = 0, INST = 0, orden = [];
+  var estado = { idx:0, clave:'__total__', firma:'', listaSelect:'', medida:'cant' };
+  var PX = null;   /* perfiles y series: dims, perfil[dim][fila], hist[fila], periods, datos[fila] */
+  function desertores(r){ return r[1]-r[2]-r[3]-r[4]-r[5]; }
+  function tda(r){ return r[1] ? desertores(r)/r[1] : 0; }
+
+  function modelo(p){
+    var t = p.total;
+    FILAS = [['Total institución', t.C, t.D, t.F, t.G, t.H]].concat(p.programas.map(function(q){ return [titulo(q.nombre), q.C, q.D, q.F, q.G, q.H]; }));
+    CLAVES = ['__total__'].concat(p.programas.map(function(q){ return q.clave; }));
+    FAC = [null].concat(p.programas.map(function(q){ return q.facultad || 'Sin facultad asignada'; }));
+    MOTIVOS = p.motivos || [];
+    MOT = [t.motivos || []].concat(p.programas.map(function(q){ return q.motivos || []; }));
+    PER = p.periodos || PER;
+    AVISOS = p.avisos || [];
+    FUENTE = p.fuente || null;
+    NPROG = p.programas.length;
+    INST = tda(FILAS[0]);
+    orden = FILAS.slice(1).map(function(r,i){ return {i:i+1, t:tda(r)}; }).sort(function(a,b){ return b.t - a.t; });
+    var serie = p.serie || {periodos:[], institucional:[]};
+    var vacia = serie.periodos.map(function(){ return null; });
+    var suma = p.programas.reduce(function(s,q){ return {m:s.m+(q.datos?q.datos.m:0), a:s.a+(q.datos?q.datos.a:0)}; }, {m:0,a:0});
+    PX = {
+      dims: p.dims || {}, perfil: {}, periods: serie.periodos,
+      hist: [serie.institucional || vacia].concat(p.programas.map(function(q){ return q.serie || vacia; })),
+      datos: [suma].concat(p.programas.map(function(q){ return q.datos || {m:0,a:0}; }))
+    };
+    Object.keys(PX.dims).forEach(function(d){ PX.perfil[d] = [t.perfil[d]].concat(p.programas.map(function(q){ return q.perfil[d]; })); });
+  }
+
+  var sel = document.getElementById('programa');
+  function armarSelector(){
+    var lista = CLAVES.join('|') + '#' + FAC.join('|');
+    if (lista === estado.listaSelect) return;
+    estado.listaSelect = lista;
+    var porFacultad = {};
+    FILAS.forEach(function(r,i){ if (i===0) return; (porFacultad[FAC[i]] = porFacultad[FAC[i]] || []).push({i:i,n:r[0]}); });
+    var html = '<option value="0">Total institución (' + NPROG + ' programas)</option>';
+    Object.keys(porFacultad).sort(function(a,b){ return a.localeCompare(b,'es'); }).forEach(function(f){
+      html += '<optgroup label="' + esc(f) + '">';
+      porFacultad[f].sort(function(a,b){ return a.n.localeCompare(b.n,'es'); }).forEach(function(o){ html += '<option value="' + o.i + '">' + esc(o.n) + '</option>'; });
+      html += '</optgroup>';
+    });
+    sel.innerHTML = html;
+  }
+
+  /* ---------- Números animados ---------- */
+  var reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var actuales = {};
+  function pintar(k, valor){
+    var texto = k === 'T' ? pct(valor,2) : miles(valor);
+    document.querySelectorAll('[data-k="'+k+'"]').forEach(function(el){ el.textContent = texto; });
+  }
+  function animar(k, hasta){
+    var desde = actuales.hasOwnProperty(k) ? actuales[k] : hasta;
+    actuales[k] = hasta;
+    if (reducido || desde === hasta){ pintar(k, hasta); return; }
+    var t0 = null;
+    function paso(ts){
+      if (!t0) t0 = ts;
+      var p = Math.min(1,(ts-t0)/520), e = 1-Math.pow(1-p,3), v = desde + (hasta-desde)*e;
+      pintar(k, k === 'T' ? v : Math.round(v));
+      if (p < 1) requestAnimationFrame(paso);
+    }
+    requestAnimationFrame(paso);
+  }
+
+  /* ---------- Cálculo ---------- */
+  var TEXTURAS = ['', 't1', 't2', 't1'];
+  var NOTAS = {
+    'Causa no determinada': 'no se pudo establecer el motivo',
+    'Otra condición': 'sobre todo aplazamientos, razones académicas e inglés u opción de grado pendiente',
+    'Matriculado en otro programa': 'dejó el programa, pero sigue en la institución',
+    'Sin observación': 'el coordinador no registró motivo'
+  };
+  function calculo(idx){
+    var r = FILAS[idx], nombre = r[0];
+    var C=r[1], D=r[2], F=r[3], G=r[4], H=r[5];
+    var E=C-D, I=E-F-G-H, T=C ? I/C : 0;
+    animar('C',C); animar('D',D); animar('E',E); animar('F',F); animar('G',G); animar('H',H); animar('I',I); animar('T',T);
+
+    document.getElementById('bajada').innerHTML = (idx === 0
+      ? 'Seguimos a los <b>'+miles(C)+'</b> estudiantes matriculados en '
+      : 'Seguimos a los <b>'+miles(C)+'</b> estudiantes de <b>'+esc(nombre)+'</b> matriculados en ') +
+      esc(PER.base)+' durante un año, hasta '+esc(PER.final)+'.';
+    document.getElementById('nota-d').textContent = pct(C ? D/C : 0,1) + ' de la cohorte';
+    document.getElementById('nota-e').innerHTML = pct(C ? E/C : 0,1) + ' · <b>posibles</b> desertores';
+
+    document.getElementById('zoom-titulo').textContent = I === 1 ? '¿Quién es el desertor?' : '¿Quiénes son los '+miles(I)+' desertores?';
+    var m = MOT[idx] || [], partes = '';
+    MOTIVOS.forEach(function(lab, j){
+      var n = m[j] || 0;
+      if (!n && (lab === 'Sin observación' || lab === 'Matriculado en otro programa') && idx !== 0) return;
+      if (!n && lab === 'Sin observación') return;
+      var p = I > 0 ? n/I : 0;
+      partes += '<div class="parte"><div class="parte-cab"><span>' + esc(lab) + '</span><span>' + miles(n) + '</span></div>' +
+        '<div class="riel"><i class="' + (TEXTURAS[j] || '') + '" style="width:' + Math.min(100,p*100).toFixed(1) + '%"></i></div>' +
+        '<small>' + (I > 0 ? pct(p,1) : '0 %') + ' · ' + esc(NOTAS[lab] || '') + '</small></div>';
+    });
+    document.getElementById('zoom-partes').innerHTML = partes || '<small>Sin desertores en esta selección.</small>';
+
+    var n = Math.round(T*100), frase;
+    if (I <= 0) frase = 'En esta selección <b>nadie desertó</b> durante el año.';
+    else if (n === 0) frase = 'De cada 100 matriculados en '+esc(PER.base)+', <b>menos de 1 desertó</b> en un año.';
+    else if (n === 1) frase = 'De cada 100 matriculados en '+esc(PER.base)+', <b>cerca de 1 desertó</b> en un año.';
+    else frase = 'De cada 100 matriculados en '+esc(PER.base)+', <b>'+(idx===0?'':'unos ')+n+' desertaron</b> en un año.';
+    document.getElementById('frase').innerHTML = frase;
+
+    var comp = document.getElementById('comparacion');
+    if (idx === 0){
+      comp.innerHTML = '<span class="chip">Referencia institucional</span><span class="puesto">Suma de los '+NPROG+' programas</span>';
+    } else {
+      var dif = (T-INST)*100, pts = Math.abs(dif).toFixed(2).replace('.',','), ref = pct(INST,2);
+      var pos = 0; for (var k=0;k<orden.length;k++){ if (orden[k].i === idx){ pos = k+1; break; } }
+      var chip;
+      if (Math.abs(dif) < 0.005) chip = '<span class="chip">Igual al promedio ('+ref+')</span>';
+      else if (dif > 0) chip = '<span class="chip arriba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>'+pts+' puntos sobre el promedio ('+ref+')</span>';
+      else chip = '<span class="chip abajo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>'+pts+' puntos bajo el promedio ('+ref+')</span>';
+      comp.innerHTML = chip + '<span class="puesto">Puesto '+pos+' de '+NPROG+' · 1 = la tasa más alta</span>';
+    }
+  }
+
+  /* Conectores */
+  var flujo = document.getElementById('flujo'), svgCon = document.getElementById('conectores');
+  var NS = 'http://www.w3.org/2000/svg', angosto = window.matchMedia('(max-width: 1099px)');
+  var GRIS = '#8A94A6', ROJO = '#D0283A';
+  function caja(id){
+    var f = flujo.getBoundingClientRect(), b = document.getElementById(id).getBoundingClientRect();
+    return {l:b.left-f.left, r:b.right-f.left, cy:Math.round((b.top+b.bottom)/2-f.top)};
+  }
+  function trazo(d, color, flecha){
+    var p = document.createElementNS(NS,'path');
+    p.setAttribute('d', d); p.setAttribute('fill','none'); p.setAttribute('stroke', color);
+    p.setAttribute('stroke-width','2'); p.setAttribute('stroke-linecap','round'); p.setAttribute('stroke-linejoin','round');
+    if (flecha) p.setAttribute('marker-end','url(#'+flecha+')');
+    svgCon.appendChild(p);
+  }
+  function abanico(origen, destinos, rojos){
+    var o = caja(origen), ds = destinos.map(caja), xm = Math.round((o.r + ds[0].l)/2);
+    var ys = ds.map(function(d){ return d.cy; }).concat([o.cy]);
+    trazo('M'+o.r+' '+o.cy+' H'+xm, GRIS);
+    trazo('M'+xm+' '+Math.min.apply(null,ys)+' V'+Math.max.apply(null,ys), GRIS);
+    ds.forEach(function(d,i){ var rojo = rojos && rojos[i]; trazo('M'+xm+' '+d.cy+' H'+(d.l-3), rojo ? ROJO : GRIS, rojo ? 'punta-roja' : 'punta-gris'); });
+  }
+  function dibujarConectores(){
+    svgCon.innerHTML = '';
+    if (angosto.matches) return;
+    var defs = document.createElementNS(NS,'defs');
+    defs.innerHTML = '<marker id="punta-gris" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="'+GRIS+'"/></marker><marker id="punta-roja" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="'+ROJO+'"/></marker>';
+    svgCon.appendChild(defs);
+    abanico('n-mat', ['n-siguen','n-aus']);
+    abanico('n-aus', ['n-rein','n-grad','n-fima','n-des'], [false,false,false,true]);
+    var d = caja('n-des'), res = caja('n-res'), xm = Math.round((d.r + res.l)/2);
+    trazo('M'+d.r+' '+d.cy+' H'+xm+' V'+res.cy+' H'+(res.l-3), ROJO, 'punta-roja');
+  }
+
+
+  /* ---------- Tooltip ---------- */
+  var tip = document.getElementById('tip');
+  function per(p){ return String(p).replace(/-II$/,'-2').replace(/-I$/,'-1'); }
+  function verTip(html, x, y){
+    tip.innerHTML = html; tip.hidden = false;
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.min(window.innerWidth - w - 12, Math.max(12, x + 14)) + 'px';
+    var top = y - h - 14; if (top < 12) top = y + 18;
+    tip.style.top = top + 'px';
+  }
+  function ocultarTip(){ tip.hidden = true; }
+  document.addEventListener('pointermove', function(e){
+    var t = e.target.closest && e.target.closest('[data-tip]');
+    if (t) verTip(t.getAttribute('data-tip'), e.clientX, e.clientY);
+    else if (!e.target.closest || !e.target.closest('#lienzo')) ocultarTip();
+  });
+  window.addEventListener('scroll', ocultarTip, {passive:true});
+
+  /* ---------- Perfil de los desertores ---------- */
+  var POCO = 20;
+  var ETIQ = {
+    sexo: {'Hombre':'Hombres','Mujer':'Mujeres','No consta':'No consta'},
+    estrato: {'1':'Estrato 1','2':'Estrato 2','3':'Estrato 3','4':'Estrato 4','5 y 6':'Estratos 5 y 6','Sin dato':'Sin dato'}
+  };
+  function grupos(dim, idx){
+    if (!PX.perfil[dim]) return [];
+    return PX.dims[dim].map(function(lab,j){
+      var v = PX.perfil[dim][idx][j];
+      return { lab: lab, et: (ETIQ[dim] && ETIQ[dim][lab]) || lab, m: v[0], a: v[1], t: v[0] ? v[1]/v[0] : 0 };
+    }).filter(function(f){ return f.m > 0; });
+  }
+  function textoTip(f, nombre){
+    return '<b>' + esc(nombre) + '</b><br>' + miles(f.a) + ' desertaron de ' + miles(f.m) + ' matriculados<br>Tasa del grupo: <b>' + pct(f.t,1) + '</b>' + (f.m < POCO ? '<br>Grupo pequeño: tasa poco estable' : '');
+  }
+  function filasHTML(filas, A, T){
+    var cant = estado.medida === 'cant';
+    var maxA = Math.max.apply(null, filas.map(function(f){ return f.a; }).concat([1]));
+    var maxT = Math.max.apply(null, filas.filter(function(f){ return f.m >= POCO; }).map(function(f){ return f.t; }).concat([T, 0.0001])) * 1.15;
+    var html = filas.map(function(f){
+      var w = cant ? f.a/maxA*100 : Math.min(100, f.t/maxT*100);
+      var val = cant ? '<b>' + miles(f.a) + '</b><small>' + (A > 0 ? pct(f.a/A,0) : '0 %') + '</small>'
+                     : '<b>' + pct(f.t,1) + '</b><small>' + miles(f.a) + ' de ' + miles(f.m) + '</small>';
+      var ref = cant ? '' : '<b class="ref" style="left:' + Math.min(100, T/maxT*100).toFixed(1) + '%"></b>';
+      if (!cant && f.m >= POCO && Math.abs(f.t - T) >= 0.0005) val = val.replace('</b>', '</b><span class="flecha-ref ' + (f.t > T ? 'sube' : 'baja') + '" aria-label="' + (f.t > T ? 'por encima' : 'por debajo') + ' del promedio">' + (f.t > T ? '▲' : '▼') + '</span>');
+      return '<div class="fila" data-tip="' + esc(textoTip(f, f.et)) + '"><span class="fila-et">' + esc(f.et) + '</span>' +
+        '<span class="fila-riel"><i class="' + (!cant && f.m < POCO ? 'poco' : '') + '" style="width:' + w.toFixed(1) + '%"></i>' + ref + '</span>' +
+        '<span class="fila-val">' + val + '</span></div>';
+    }).join('');
+    if (!html) return '<p class="pie-panel">Sin datos para esta selección.</p>';
+    if (cant) return html;
+    var x = Math.min(100, T/maxT*100);
+    return '<div class="fila fila-ref" aria-hidden="true"><span></span><span class="fila-riel"><span class="ref-tag' + (x > 55 ? ' der' : '') + '" style="left:' + x.toFixed(1) + '%">Promedio ' + pct(T,1) + '</span></span><span></span></div>' + html;
+  }
+  function perfil(idx){
+    if (!PX) return;
+    var r = FILAS[idx], C = r[1], I = desertores(r), T = tda(r);
+    var dat = PX.datos[idx], A = dat.a;            /* el perfil se construye con la hoja de datos */
+    var cant = estado.medida === 'cant';
+    var sub = cant ? 'Desertores y su peso en el total de ' + miles(A) : 'Desertores ÷ matriculados de cada grupo';
+    ['sexo','edad','civil','estrato'].forEach(function(d){
+      document.getElementById('p-'+d).innerHTML = filasHTML(grupos(d, idx), A, T);
+      document.getElementById('sub-'+d).textContent = sub;
+    });
+    document.getElementById('sub-semestre').textContent = sub;
+
+    var avP = document.getElementById('aviso-perfil');
+    if (dat.m !== C || dat.a !== I){
+      avP.hidden = false;
+      avP.textContent = 'La hoja de datos tiene ' + miles(dat.m) + ' matriculados y ' + miles(dat.a) + ' desertores, mientras la hoja TDA dice ' + miles(C) + ' y ' + miles(I) + '. El perfil se construye con la hoja de datos.';
+    } else avP.hidden = true;
+
+    var sx = grupos('sexo', idx), hom = sx.filter(function(f){ return f.lab==='Hombre'; })[0], muj = sx.filter(function(f){ return f.lab==='Mujer'; })[0];
+    var dest = document.getElementById('dest-sexo');
+    if (!A) dest.innerHTML = '<span>Nadie desertó en esta selección.</span>';
+    else if (cant) dest.innerHTML = '<b>' + pct((hom?hom.a:0)/A,0) + '</b><span>de los desertores son hombres</span>';
+    else dest.innerHTML = '<b>' + pct(hom?hom.t:0,1) + '</b><span>en hombres frente a ' + pct(muj?muj.t:0,1) + ' en mujeres</span>';
+
+    var sem = grupos('semestre', idx), sinDato = sem.filter(function(f){ return f.lab === 'Sin dato'; })[0], cols = [];
+    for (var s=1; s<=10; s++){
+      var f = sem.filter(function(g){ return g.lab === String(s); })[0] || {lab:String(s), m:0, a:0, t:0};
+      f.et = s + '.º semestre'; cols.push(f);
+    }
+    var maxA = Math.max.apply(null, cols.map(function(f){ return f.a; }).concat([1]));
+    var maxT = Math.max.apply(null, cols.filter(function(f){ return f.m >= POCO; }).map(function(f){ return f.t; }).concat([T, 0.0001])) * 1.15;
+    var html = cols.map(function(f){
+      var h = f.m === 0 ? 0 : (cant ? f.a/maxA : Math.min(1, f.t/maxT));
+      var val = f.m === 0 ? '–' : (cant ? miles(f.a) : pct(f.t,1));
+      var tt = f.m === 0 ? '<b>' + f.et + '</b><br>Sin estudiantes matriculados' : textoTip(f, f.et);
+      return '<div class="colum" data-tip="' + esc(tt) + '"><span class="colum-val">' + val + '</span><span class="colum-barra' + (!cant && f.m > 0 && f.m < POCO ? ' poco' : '') + '" style="height:' + (h*140).toFixed(0) + 'px"></span><span class="colum-et">' + f.lab + '.º</span></div>';
+    }).join('');
+    if (!cant) html += '<div class="linea-ref" style="bottom:' + (31 + Math.min(1,T/maxT)*140).toFixed(0) + 'px"></div>';
+    var colsEl = document.getElementById('p-semestre');
+    colsEl.innerHTML = html;
+    colsEl.setAttribute('aria-label', 'Desertores por semestre: ' + cols.map(function(f){ return f.lab + '.º ' + miles(f.a); }).join(', '));
+    document.getElementById('pie-semestre').innerHTML = (cant ? '' : '<span class="ref-muestra"></span>Promedio ' + pct(T,1) + '. ') + (sinDato && sinDato.a ? miles(sinDato.a) + ' desertor' + (sinDato.a>1?'es':'') + ' sin semestre registrado.' : '');
+
+    var dims = [['sexo',''],['semestre','.º semestre'],['edad',' años'],['estrato','']];
+    var piezas = dims.map(function(p){
+      var g = grupos(p[0], idx).filter(function(f){ return f.lab !== 'Sin dato' && f.lab !== 'No consta'; });
+      if (!cant) g = g.filter(function(f){ return f.m >= POCO; });
+      if (!g.length) return '';
+      g.sort(function(a,b){ return cant ? b.a - a.a : b.t - a.t; });
+      var top = g[0];
+      if (cant && top.a === 0) return '';
+      var nombre = p[0]==='semestre' ? top.lab + p[1] : (p[0]==='edad' ? top.et + p[1] : top.et);
+      return '<span class="pastilla"><b>' + esc(nombre) + '</b>' + (cant ? miles(top.a) : pct(top.t,1)) + '</span>';
+    }).join('');
+    document.getElementById('lectura').innerHTML = piezas ? '<span class="rotulo">' + (cant ? 'Donde hay más desertores' : 'Grupos con la tasa más alta') + '</span>' + piezas : '';
+    var guia = document.getElementById('guia-ref');
+    guia.hidden = cant;
+    if (!cant) guia.innerHTML = '<span class="ref-muestra"></span><span>La <b>línea azul punteada</b> es el promedio ' + (idx === 0 ? 'institucional' : 'del programa') + ': <b>' + pct(T,1) + '</b> desertaron. Si la barra de un grupo <b>pasa la línea</b> (<span class="flecha-ref sube">▲</span>), ese grupo tiene más deserción que el promedio; si <b>no la alcanza</b> (<span class="flecha-ref baja">▼</span>), tiene menos.</span>';
+    document.getElementById('pie-perfil').innerHTML = cant ? '' : 'Las barras rayadas son grupos con menos de ' + POCO + ' matriculados: su tasa cambia mucho con pocos casos y no se marcan con flecha.';
+  }
+  function medida(m){
+    estado.medida = m;
+    document.getElementById('m-cant').setAttribute('aria-pressed', m === 'cant');
+    document.getElementById('m-tasa').setAttribute('aria-pressed', m === 'tasa');
+    perfil(estado.idx);
+  }
+
+  /* ---------- Evolución ---------- */
+  var lienzo = document.getElementById('lienzo');
+  var C_PROG = '#D0283A', C_INST = '#45526B';
+  function evolucion(idx){
+    if (!PX) return;
+    var prog = PX.hist[idx], inst = PX.hist[0], P = PX.periods, n = P.length;
+    var esTotal = idx === 0, nombre = esTotal ? 'Institucional' : FILAS[idx][0];
+    document.getElementById('t-evol').textContent = n ? 'Evolución de la TDA, ' + per(P[0]) + ' a ' + per(P[n-1]) : 'Evolución de la TDA';
+    var validos = prog.map(function(v,i){ return {v:v,i:i}; }).filter(function(o){ return o.v !== null; });
+    if (!validos.length){
+      document.getElementById('kpis').innerHTML = '';
+      document.getElementById('evol-bajada').textContent = nombre + ' no tiene serie histórica en la hoja Consolidados.';
+    } else {
+      var ult = prog[n-1], ant = prog[n-2];
+      var mn = validos.reduce(function(a,b){ return b.v < a.v ? b : a; }), mx = validos.reduce(function(a,b){ return b.v > a.v ? b : a; });
+      var deltaHTML = '–', deltaDet = 'Sin dato del periodo anterior';
+      if (ant != null && ult != null){
+        var d = (ult - ant)*100, pts = Math.abs(d).toFixed(1).replace('.',',');
+        if (Math.abs(d) < 0.05){ deltaHTML = '<span class="delta">Igual</span>'; deltaDet = 'Sin cambio frente a ' + per(P[n-2]); }
+        else {
+          deltaHTML = '<span class="delta ' + (d>0?'sube':'baja') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + (d>0 ? 'M12 19V5M6 11l6-6 6 6' : 'M12 5v14M6 13l6 6 6-6') + '"/></svg>' + pts + ' pts</span>';
+          deltaDet = (d>0 ? 'Subió' : 'Bajó') + ' frente a ' + per(P[n-2]) + ' (' + pct(ant,1) + ')';
+        }
+      }
+      document.getElementById('kpis').innerHTML =
+        '<div class="tarjeta kpi"><span class="rotulo">TDA ' + per(P[n-1]) + '</span><span class="valor">' + pct(ult,1) + '</span><span class="detalle">' + esc(nombre) + '</span></div>' +
+        '<div class="tarjeta kpi"><span class="rotulo">Cambio en el último periodo</span><span class="valor">' + deltaHTML + '</span><span class="detalle">' + deltaDet + '</span></div>' +
+        '<div class="tarjeta kpi"><span class="rotulo">Mínimo de la serie</span><span class="valor">' + pct(mn.v,1) + '</span><span class="detalle">en ' + per(P[mn.i]) + '</span></div>' +
+        '<div class="tarjeta kpi"><span class="rotulo">Máximo de la serie</span><span class="valor">' + pct(mx.v,1) + '</span><span class="detalle">en ' + per(P[mx.i]) + '</span></div>';
+      document.getElementById('evol-bajada').textContent = esTotal
+        ? 'Tasa institucional de deserción anual de cada periodo, según la hoja Consolidados.'
+        : 'Tasa de ' + nombre + ' en cada periodo, comparada con la institucional.' + (validos[0].i > 0 ? ' La serie del programa inicia en ' + per(P[validos[0].i]) + '.' : '');
+    }
+    document.getElementById('leyenda').innerHTML = esTotal ? '' : '<span><i class="key-linea"></i>' + esc(nombre) + '</span><span><i class="key-linea punteada"></i>Institucional</span>';
+    var filas = '<thead><tr><th scope="col">Periodo</th>' + (esTotal ? '' : '<th scope="col">Programa</th>') + '<th scope="col">Institucional</th></tr></thead><tbody>';
+    for (var i=n-1; i>=0; i--) filas += '<tr><td>' + per(P[i]) + '</td>' + (esTotal ? '' : '<td>' + pct(prog[i],1) + '</td>') + '<td>' + pct(inst[i],1) + '</td></tr>';
+    document.getElementById('tabla').innerHTML = filas + '</tbody>';
+    dibujarGrafico();
+  }
+  function dibujarGrafico(){
+    if (!PX) return;
+    var idx = estado.idx, prog = PX.hist[idx], inst = PX.hist[0], P = PX.periods, n = P.length, esTotal = idx === 0;
+    var W = lienzo.clientWidth, Hh = lienzo.clientHeight;
+    if (!W) return;
+    var vals = prog.concat(esTotal ? [] : inst).filter(function(v){ return v !== null; });
+    if (n < 2 || !vals.length){ lienzo.innerHTML = '<div class="vacio">No hay serie histórica para mostrar.</div>'; return; }
+    var m = {t:28, r:30, b:46, l:52};
+    var vmax = Math.max.apply(null, vals), paso = vmax > 0.3 ? 0.1 : 0.05;
+    var ymax = Math.max(paso, Math.ceil(vmax*1.08/paso)*paso);
+    function x(i){ return m.l + i*(W-m.l-m.r)/(n-1); }
+    function y(v){ return m.t + (1 - v/ymax)*(Hh-m.t-m.b); }
+    var s = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Evolución de la tasa de deserción anual de ' + esc(esTotal ? 'la institución' : FILAS[idx][0]) + '">';
+    for (var v=0; v<=ymax+1e-9; v+=paso){
+      var yy = y(v).toFixed(1);
+      s += '<line x1="' + m.l + '" x2="' + (W-m.r) + '" y1="' + yy + '" y2="' + yy + '" stroke="' + (v===0 ? '#C9D0DC' : '#E8ECF2') + '" stroke-width="1"/>';
+      s += '<text x="' + (m.l-10) + '" y="' + yy + '" text-anchor="end" dominant-baseline="middle" font-size="12" fill="#6A758B">' + Math.round(v*100) + ' %</text>';
+    }
+    var cada = W < 560 ? 4 : (W < 900 ? 2 : 1);
+    for (var i=0; i<n; i++){
+      if (i % cada && i !== n-1) continue;
+      var et = per(P[i]);
+      s += '<text x="' + x(i).toFixed(1) + '" y="' + (Hh-m.b+22) + '" text-anchor="middle" font-size="12" fill="#6A758B">' + (W < 900 ? et.replace(/^20/,'') : et) + '</text>';
+    }
+    function camino(serie){
+      var d = '', abierto = false;
+      serie.forEach(function(v,i){ if (v === null){ abierto = false; return; } d += (abierto ? ' L' : ' M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1); abierto = true; });
+      return d.trim();
+    }
+    if (!esTotal) s += '<path d="' + camino(inst) + '" fill="none" stroke="' + C_INST + '" stroke-width="2" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"/>';
+    s += '<path d="' + camino(prog) + '" fill="none" stroke="' + C_PROG + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+    prog.forEach(function(v,i){ if (v === null) return; s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="' + (i === n-1 ? 6 : 4) + '" fill="' + C_PROG + '" stroke="#FFFFFF" stroke-width="2"/>'; });
+    var lu = prog[n-1];
+    if (lu !== null) s += '<text x="' + (x(n-1)-10).toFixed(1) + '" y="' + (y(lu)-14).toFixed(1) + '" text-anchor="end" font-size="14" font-weight="600" fill="#15203A">' + pct(lu,1) + '</text>';
+    s += '<g id="cruz" visibility="hidden"><line id="cruz-l" y1="' + m.t + '" y2="' + (Hh-m.b) + '" stroke="#8A94A6" stroke-width="1"/><circle id="cruz-p" r="7" fill="none" stroke="' + C_PROG + '" stroke-width="2"/><circle id="cruz-i" r="5" fill="#FFFFFF" stroke="' + C_INST + '" stroke-width="2"/></g>';
+    s += '<rect id="zona" x="' + m.l + '" y="' + m.t + '" width="' + (W-m.l-m.r) + '" height="' + (Hh-m.t-m.b) + '" fill="transparent"/></svg>';
+    lienzo.innerHTML = s;
+    var zona = document.getElementById('zona'), cruz = document.getElementById('cruz');
+    function mover(e){
+      var b = lienzo.getBoundingClientRect(), px = e.clientX - b.left;
+      var i = Math.max(0, Math.min(n-1, Math.round((px-m.l)/((W-m.l-m.r)/(n-1))))), cx = x(i).toFixed(1);
+      cruz.setAttribute('visibility','visible');
+      document.getElementById('cruz-l').setAttribute('x1',cx); document.getElementById('cruz-l').setAttribute('x2',cx);
+      var cp = document.getElementById('cruz-p'), ci = document.getElementById('cruz-i');
+      if (prog[i] !== null){ cp.setAttribute('cx',cx); cp.setAttribute('cy',y(prog[i]).toFixed(1)); cp.setAttribute('visibility','visible'); } else cp.setAttribute('visibility','hidden');
+      if (!esTotal && inst[i] !== null){ ci.setAttribute('cx',cx); ci.setAttribute('cy',y(inst[i]).toFixed(1)); ci.setAttribute('visibility','visible'); } else ci.setAttribute('visibility','hidden');
+      var html = '<b>' + per(P[i]) + '</b><br>' + (esTotal ? 'Institucional: <b>' + pct(prog[i],1) + '</b>' : esc(FILAS[idx][0]) + ': <b>' + (prog[i]===null ? 'sin dato' : pct(prog[i],1)) + '</b><br>Institucional: <b>' + pct(inst[i],1) + '</b>');
+      verTip(html, b.left + Number(cx), e.clientY);
+    }
+    zona.addEventListener('pointermove', mover);
+    zona.addEventListener('pointerdown', mover);
+    zona.addEventListener('pointerleave', function(){ cruz.setAttribute('visibility','hidden'); ocultarTip(); });
+  }
+
+  /* Revisión y fuente */
+  function revision(){
+    var n = AVISOS.length, nEl = document.getElementById('revision-n');
+    nEl.textContent = n; nEl.className = 'n' + (n ? '' : ' ok');
+    document.getElementById('revision-lista').innerHTML = n
+      ? AVISOS.map(function(a){ return '<li>' + esc(a) + '</li>'; }).join('')
+      : '<li>Las tres hojas cuadran entre sí: los totales de la hoja TDA coinciden con la hoja de datos y todos los programas tienen serie histórica.</li>';
+    var f = FUENTE, txt = 'Fuente: ';
+    if (f && f.nombre) txt += f.nombre + (f.hojas ? ' (hojas «' + f.hojas.tda + '», «' + f.hojas.consolidado + '» y «' + f.hojas.datos + '»)' : '');
+    else txt += 'Tasas de Deserción Anual';
+    if (f && f.modificado) txt += ' · archivo modificado el ' + new Date(f.modificado).toLocaleString('es-CO', {dateStyle:'medium', timeStyle:'short'});
+    document.getElementById('fuente').textContent = txt + '. Solo se muestran datos agregados.';
+  }
+
+  /* Orquestación */
+  function mostrar(idx){
+    estado.idx = idx; estado.clave = CLAVES[idx];
+    ['base','medio','final'].forEach(function(k){ document.querySelectorAll('[data-p="'+k+'"]').forEach(function(el){ el.textContent = PER[k]; }); });
+    calculo(idx); perfil(idx); evolucion(idx);
+    document.getElementById('aviso').hidden = !(idx !== 0 && FILAS[idx][1] < 30);
+    document.getElementById('ver-total').hidden = idx === 0;
+    if (String(sel.value) !== String(idx)) sel.value = String(idx);
+    requestAnimationFrame(dibujarConectores);
+  }
+  function firma(p){ return JSON.stringify([p.programas, p.total, p.periodos, p.motivos, p.avisos, p.serie]); }
+  var tAviso = null;
+  function avisarCambio(texto){
+    var a = document.getElementById('aviso-cambio');
+    a.textContent = texto; a.hidden = false;
+    clearTimeout(tAviso); tAviso = setTimeout(function(){ a.hidden = true; }, 4500);
+  }
+  function aplicar(p){
+    var f = firma(p), primera = !FILAS.length;
+    FUENTE = p.fuente || FUENTE;
+    if (f === estado.firma){ revision(); return; }
+    estado.firma = f;
+    modelo(p); armarSelector();
+    var idx = CLAVES.indexOf(estado.clave); if (idx < 0) idx = 0;
+    mostrar(idx); revision();
+    if (!primera) avisarCambio('Se cargaron cambios del archivo · ' + new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'}));
+  }
+
+  /* Conexión con la API */
+  function configurada(){ return API_URL && !/PEGA_AQUI/.test(API_URL); }
+  function urlApi(fresco){
+    var q = [];
+    if (fresco) q.push('fresco=1');
+    if (API_TOKEN) q.push('token=' + encodeURIComponent(API_TOKEN));
+    q.push('t=' + Date.now());
+    return API_URL + (API_URL.indexOf('?') >= 0 ? '&' : '?') + q.join('&');
+  }
+  function jsonp(url){
+    return new Promise(function(ok, mal){
+      var nombre = 'cbTda' + Date.now(), s = document.createElement('script');
+      function limpiar(){ try { delete window[nombre]; } catch(e){ window[nombre] = undefined; } s.remove(); }
+      var t = setTimeout(function(){ limpiar(); mal(new Error('tiempo de espera agotado')); }, ESPERA_MS);
+      window[nombre] = function(d){ clearTimeout(t); limpiar(); ok(d); };
+      s.onerror = function(){ clearTimeout(t); limpiar(); mal(new Error('no se pudo cargar la API')); };
+      s.src = url + '&callback=' + nombre;
+      document.head.appendChild(s);
+    });
+  }
+  function pedir(fresco){
+    var url = urlApi(fresco), ctrl = window.AbortController ? new AbortController() : null;
+    var t = setTimeout(function(){ if (ctrl) ctrl.abort(); }, ESPERA_MS);
+    return fetch(url, { cache:'no-store', redirect:'follow', signal: ctrl ? ctrl.signal : undefined })
+      .then(function(r){ clearTimeout(t); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .catch(function(e){ clearTimeout(t); if (e && e.name === 'AbortError') throw new Error('la API tardó demasiado'); return jsonp(url); });
+  }
+  function valido(p){ return p && p.ok && p.programas && p.total && p.periodos; }
+  function ponerEstado(tipo, texto){
+    document.getElementById('estado').className = 'estado' + (tipo === 'vivo' ? '' : ' ' + tipo);
+    document.getElementById('estado-texto').textContent = texto;
+  }
+  var cargando = false;
+  function cargar(fresco){
+    if (cargando) return;
+    var btn = document.getElementById('btn-actualizar'), av = document.getElementById('aviso-conexion');
+    if (!configurada()){
+      if (!FILAS.length && RESPALDO) aplicar(RESPALDO);
+      ponerEstado('respaldo', 'Vista previa · datos del archivo');
+      ['auto-envoltura','cuenta','btn-actualizar'].forEach(function(id){ document.getElementById(id).hidden = true; });
+      return;
+    }
+    cargando = true;
+    btn.classList.add('girando'); btn.disabled = true;
+    ponerEstado('cargando', 'Consultando datos…');
+    pedir(fresco).then(function(p){
+      if (!valido(p)) throw new Error((p && p.error) || 'respuesta inesperada');
+      almacen.guardar('tableroTDA.ultimo', JSON.stringify(p));
+      aplicar(p);
+      av.hidden = true;
+      ponerEstado('vivo', 'En línea · ' + new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit'}));
+    }).catch(function(e){
+      var origen = 'los últimos datos cargados';
+      if (!FILAS.length){
+        var p = null; try { p = JSON.parse(almacen.leer('tableroTDA.ultimo') || 'null'); } catch(_){}
+        if (valido(p)) { aplicar(p); origen = 'los datos guardados en este navegador'; }
+        else if (RESPALDO) { aplicar(RESPALDO); origen = 'la copia de respaldo incluida en la página'; }
+      }
+      av.hidden = false; av.textContent = 'No se pudo consultar Google (' + e.message + '). Se muestran ' + origen + '.';
+      ponerEstado('error', 'Sin conexión');
+    }).then(function(){
+      cargando = false; btn.classList.remove('girando'); btn.disabled = false; reprogramar();
+    });
+  }
+  var reloj = null, proxima = 0, selAuto = document.getElementById('auto');
+  var guardadoAuto = almacen.leer('tableroTDA.auto'); if (guardadoAuto !== null && selAuto.querySelector('option[value="' + guardadoAuto + '"]')) selAuto.value = guardadoAuto;
+  function reprogramar(){
+    clearInterval(reloj);
+    var seg = +selAuto.value, cuenta = document.getElementById('cuenta');
+    if (!seg || !configurada()){ cuenta.textContent = ''; return; }
+    proxima = Date.now() + seg*1000;
+    function tic(){
+      if (document.hidden) return;
+      var resta = proxima - Date.now();
+      if (resta <= 0){ clearInterval(reloj); cargar(false); return; }
+      var s = Math.ceil(resta/1000);
+      cuenta.textContent = 'Próxima en ' + Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+    }
+    tic(); reloj = setInterval(tic, 1000);
+  }
+
+  sel.addEventListener('change', function(){ mostrar(Number(sel.value)); });
+  document.getElementById('ver-total').addEventListener('click', function(){ mostrar(0); sel.focus(); });
+  document.getElementById('btn-actualizar').addEventListener('click', function(){ cargar(true); });
+  document.getElementById('m-cant').addEventListener('click', function(){ medida('cant'); });
+  document.getElementById('m-tasa').addEventListener('click', function(){ medida('tasa'); });
+  selAuto.addEventListener('change', function(){ almacen.guardar('tableroTDA.auto', selAuto.value); reprogramar(); });
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden && configurada() && Date.now() > proxima && +selAuto.value) cargar(false); });
+  var pendiente = false;
+  function redibujar(){ if (pendiente || !FILAS.length) return; pendiente = true; requestAnimationFrame(function(){ pendiente = false; dibujarConectores(); dibujarGrafico(); }); }
+  if (window.ResizeObserver){ new ResizeObserver(redibujar).observe(flujo); new ResizeObserver(redibujar).observe(lienzo); }
+  window.addEventListener('resize', redibujar);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(redibujar);
+
+  var previo = null; try { previo = JSON.parse(almacen.leer('tableroTDA.ultimo') || 'null'); } catch(_){}
+  if (configurada() && valido(previo)) aplicar(previo); else if (RESPALDO) aplicar(RESPALDO);
+  cargar(false);
+})();
+</script>
+</body>
+</html>
